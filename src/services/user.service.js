@@ -16,7 +16,7 @@ export const chechExistingUser = async (email) => {
 
 export const registerUserService = async ({ name, email, password }) => {
   const formattedEmail = email.toLowerCase();
-  const hashedPassword = bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   const [user] = await db
     .insert(usersTable)
