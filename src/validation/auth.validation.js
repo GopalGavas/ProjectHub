@@ -6,3 +6,8 @@ export const registerUserValidation = z.object({
   password: z.string().min(6, "Password must be atleast  6 characters long"),
   role: z.enum(["admin", "member", "guest"]).optional().default("member"),
 });
+
+export const loginUserValidation = z.object({
+  email: z.email("Invalid email format").trim(),
+  password: z.string().min(6, "Password must be atleast 6 characters long"),
+});

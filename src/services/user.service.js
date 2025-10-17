@@ -4,12 +4,16 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export const chechExistingUser = async (email) => {
+  const formattedEmail = email.toLowerCase();
   const [existingUser] = await db
     .select({
+      id: usersTable.id,
       email: usersTable.email,
+      password: usersTable.password,
+      role: usersTable.role,
     })
     .from(usersTable)
-    .where(eq(usersTable.email, email));
+    .where(eq(usersTable.email, formattedEmail));
 
   return existingUser;
 };
