@@ -7,9 +7,9 @@ import { successResponse } from "../utils/response.js";
 import { errorResponse } from "../utils/error.js";
 import {
   checkExistingUser,
+  comparePassword,
   registerUserService,
 } from "../services/user.service.js";
-import bcrypt from "bcryptjs";
 import { generateToken } from "../utils/token.js";
 
 export const registerUserController = async (req, res) => {
@@ -77,7 +77,7 @@ export const loginUserController = async (req, res) => {
         );
     }
 
-    const isPasswordValid = await bcrypt.compare(
+    const isPasswordValid = await comparePassword(
       password,
       existingUser.password
     );

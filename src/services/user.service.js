@@ -38,3 +38,8 @@ export const registerUserService = async ({ name, email, password }) => {
 
   return user;
 };
+
+export const comparePassword = async (password, userPassword) => {
+  const isPasswordValid = await bcrypt.compare(password, userPassword);
+  return isPasswordValid;
+};
