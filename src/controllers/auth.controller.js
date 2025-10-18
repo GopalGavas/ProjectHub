@@ -6,11 +6,11 @@ import {
 import { successResponse } from "../utils/response.js";
 import { errorResponse } from "../utils/error.js";
 import {
-  chechExistingUser,
+  checkExistingUser,
   registerUserService,
 } from "../services/user.service.js";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import { generateToken } from "../utils/token.js";
 
 export const registerUserController = async (req, res) => {
   try {
@@ -25,7 +25,7 @@ export const registerUserController = async (req, res) => {
 
     const { name, email, password } = validatedResult.data;
 
-    const existingUser = await chechExistingUser(email);
+    const existingUser = await checkExistingUser(email);
 
     if (existingUser) {
       return res
@@ -64,7 +64,7 @@ export const loginUserController = async (req, res) => {
 
     const { email, password } = validatedResult.data;
 
-    const existingUser = await chechExistingUser(email);
+    const existingUser = await checkExistingUser(email);
 
     if (!existingUser) {
       return res
@@ -99,25 +99,27 @@ export const loginUserController = async (req, res) => {
       role: existingUser.role,
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = generateToken(payload);
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    const responseData = {
+      id: existingUser.id,
+      email: existingUser.email,
+      role: existingUser.role,
+    };
 
-    return res.status(200).json(
-      successResponse("User logged in Successfully", {
-        id: existingUser.id,
-        email: existingUser.email,
-        role: existingUser.role,
-        token,
+    if (process.env.NODE_ENV !== "production") {
+      responseData.token = token;
+    }
+
+    res
+      .status(200)
+      .cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       })
-    );
+      .json(successResponse("User logged in Successfully", responseData));
   } catch (error) {
     console.error("Login User Error: ", error);
     return res.status(500).json(errorResponse("Internal Server Error"));

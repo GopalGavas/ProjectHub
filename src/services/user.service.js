@@ -3,7 +3,7 @@ import { usersTable } from "../models/user.model.js";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
-export const chechExistingUser = async (email) => {
+export const checkExistingUser = async (email) => {
   const formattedEmail = email.toLowerCase();
   const [existingUser] = await db
     .select({
