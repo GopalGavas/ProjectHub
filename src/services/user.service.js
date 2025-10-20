@@ -43,3 +43,30 @@ export const comparePassword = async (password, userPassword) => {
   const isPasswordValid = await bcrypt.compare(password, userPassword);
   return isPasswordValid;
 };
+
+export const getUserById = async (userId) => {
+  const [user] = await db
+    .select({
+      id: usersTable.id,
+      name: usersTable.name,
+      email: usersTable.email,
+      role: usersTable.role,
+    })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId));
+
+  return user;
+};
+
+export const updateUserData = async (updatedData, userId) => {
+  const [updatedUser] = await db
+    .update(usersTable)
+    .set(updatedData)
+    .where(eq(usersTable.id, userId))
+    .returning({
+      name: usersTable.name,
+      email: usersTable.email,
+    });
+
+  return updatedUser;
+};
