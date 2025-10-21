@@ -9,7 +9,7 @@ export const authenticateUser = (req, res, next) => {
     if (!token) {
       return res
         .status(401)
-        .json(errorResponse("Unauthorized Access", "Token not provided"));
+        .json(errorResponse("Unauthorized Access", "You are not logged In"));
     }
 
     const decodedToken = jwt.verify(token, process.env.JWT_SECRET);

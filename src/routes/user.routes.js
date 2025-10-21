@@ -1,13 +1,15 @@
 import Router from "express";
 import { authenticateUser } from "../middlewares/auth.middleware.js";
 import {
-  getUserProfile,
-  updateUserDetails,
+  changePasswordController,
+  getUserProfileController,
+  updateUserDetailsController,
 } from "../controllers/user.controller.js";
 
 const router = Router();
 
-router.get("/", authenticateUser, getUserProfile);
-router.put("/:id", authenticateUser, updateUserDetails);
+router.get("/", authenticateUser, getUserProfileController);
+router.put("/update-details", authenticateUser, updateUserDetailsController);
+router.put("/change-password", authenticateUser, changePasswordController);
 
 export default router;

@@ -13,3 +13,8 @@ export const validateUserDetails = z
     (data) => data.name || data.email,
     "Atleast one field (name or email) must be provided for update"
   );
+
+export const changePasswordValidation = z.object({
+  oldPassword: z.string().min(6, "Password must be atleast of 6 characters"),
+  newPassword: z.string().min(6, "Password must be atleast of 6 characters"),
+});

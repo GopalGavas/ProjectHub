@@ -51,6 +51,7 @@ export const getUserById = async (userId) => {
       name: usersTable.name,
       email: usersTable.email,
       role: usersTable.role,
+      password: usersTable.password,
     })
     .from(usersTable)
     .where(eq(usersTable.id, userId));
@@ -69,4 +70,16 @@ export const updateUserData = async (updatedData, userId) => {
     });
 
   return updatedUser;
+};
+
+export const updateUserPassword = async (userId, newPassword) => {
+  const hashNewPassword = await bcrypt.hash(newPassword, 10);
+  const updatePassword = await db
+    .update(usersTable)
+    .set({
+      password: hashNewPassword,
+    })
+    .where(eq(usersTable.id, userId));
+
+  return updatePassword;
 };
