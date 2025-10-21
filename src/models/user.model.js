@@ -20,4 +20,6 @@ export const usersTable = pgTable("users", {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
+  passwordResetToken: text("password_reset_token"),
+  passwordResetExpires: timestamp("password_reset_expires"),
 });
