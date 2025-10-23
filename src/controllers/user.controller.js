@@ -4,14 +4,18 @@ import {
   checkExistingUser,
   comparePassword,
   getUserById,
+  setResetPassToken,
   updateUserData,
   updateUserPassword,
 } from "../services/user.service.js";
 import {
   validateUserDetails,
   changePasswordValidation,
+  generateResetPassTokenValidation,
 } from "../validation/user.validation.js";
 import { z } from "zod";
+import { resetPassToken } from "../utils/token.js";
+import { sendEmail } from "../utils/mail.js";
 
 export const getUserProfileController = async (req, res) => {
   try {
@@ -155,5 +159,57 @@ export const changePasswordController = async (req, res) => {
   } catch (error) {
     console.error("Update Password failed: ", error);
     return res.status(500).json(errorResponse("Internal server error"));
+  }
+};
+
+export const generateResetPassTokenController = async (req, res) => {
+  try {
+    const validateData = await generateResetPassTokenValidation.safeParseAsync(
+      req.body
+    );
+    if (!validateData.success) {
+      const formattedError = z.treeifyError(validateData.error);
+      return res
+        .status(400)
+        .json(errorResponse("Invalid Request", formattedError));
+    }
+
+    const { email } = validateData.data;
+
+    const user = await checkExistingUser(email);
+
+    if (!user) {
+      return res
+        .status(404)
+        .json(
+          errorResponse(
+            "User not found",
+            "User with this email does not exists"
+          )
+        );
+    }
+
+    const { token, hashedToken, expires } = resetPassToken();
+
+    await setResetPassToken(hashedToken, expires, user.id);
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-token/${token}`;
+
+    await sendEmail(
+      email,
+      "Reset your password",
+      `Hello ${user.name}, reset your password using this link: ${resetUrl}`,
+      `<p>Hello ${user.name},</p>
+       <p>Click the link below to reset your password:</p>
+       <a href="${resetUrl}">Reset Password</a>
+       <p>This link is valid for only 15 minutes.</p>`
+    );
+
+    return res
+      .status(200)
+      .json(successResponse("Password reset link sent to your email"));
+  } catch (error) {
+    console.error("Forget Password Error: ", error);
+    return res.status(500).json(errorResponse("Internal Server Error"));
   }
 };

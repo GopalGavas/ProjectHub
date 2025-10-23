@@ -18,3 +18,7 @@ export const changePasswordValidation = z.object({
   oldPassword: z.string().min(6, "Password must be atleast of 6 characters"),
   newPassword: z.string().min(6, "Password must be atleast of 6 characters"),
 });
+
+export const generateResetPassTokenValidation = z.object({
+  email: z.email("Invalid Email address"),
+});

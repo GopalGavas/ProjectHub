@@ -4,12 +4,15 @@ import {
   changePasswordController,
   getUserProfileController,
   updateUserDetailsController,
+  generateResetPassTokenController,
 } from "../controllers/user.controller.js";
 
 const router = Router();
 
-router.get("/", authenticateUser, getUserProfileController);
-router.put("/update-details", authenticateUser, updateUserDetailsController);
-router.put("/change-password", authenticateUser, changePasswordController);
+router.use(authenticateUser);
+router.get("/", getUserProfileController);
+router.put("/update-details", updateUserDetailsController);
+router.put("/change-password", changePasswordController);
+router.post("/forgot-password", generateResetPassTokenController);
 
 export default router;

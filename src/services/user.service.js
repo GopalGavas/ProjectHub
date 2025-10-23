@@ -8,6 +8,7 @@ export const checkExistingUser = async (email) => {
   const [existingUser] = await db
     .select({
       id: usersTable.id,
+      name: usersTable.name,
       email: usersTable.email,
       password: usersTable.password,
       role: usersTable.role,
@@ -82,4 +83,14 @@ export const updateUserPassword = async (userId, newPassword) => {
     .where(eq(usersTable.id, userId));
 
   return updatePassword;
+};
+
+export const setResetPassToken = async (hashedToken, expiry, userId) => {
+  await db
+    .update(usersTable)
+    .set({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: new Date(expiry),
+    })
+    .where(eq(usersTable.id, userId));
 };
