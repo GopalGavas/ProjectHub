@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
 import { usersTable } from "../models/user.model.js";
-import { eq } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export const checkExistingUser = async (email) => {
@@ -93,4 +93,34 @@ export const setResetPassToken = async (hashedToken, expiry, userId) => {
       passwordResetExpires: new Date(expiry),
     })
     .where(eq(usersTable.id, userId));
+};
+
+export const findUserWithToken = async (token) => {
+  const [user] = await db
+    .select({
+      id: usersTable.id,
+      password: usersTable.password,
+    })
+    .from(usersTable)
+    .where(
+      and(
+        eq(usersTable.passwordResetToken, token),
+        gt(usersTable.passwordResetExpires, new Date())
+      )
+    );
+
+  return user;
+};
+
+export const updatePasswordAndResetToken = async (userId, newHashPassword) => {
+  const updatePassword = await db
+    .update(usersTable)
+    .set({
+      password: newHashPassword,
+      passwordResetToke: null,
+      passwordResetExpires: null,
+    })
+    .where(eq(usersTable.id, userId));
+
+  return updatePassword;
 };

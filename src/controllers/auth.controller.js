@@ -2,6 +2,8 @@ import { z } from "zod";
 import {
   registerUserValidation,
   loginUserValidation,
+  generateResetPassTokenValidation,
+  resetPasswordValidation,
 } from "../validation/auth.validation.js";
 import { successResponse } from "../utils/response.js";
 import { errorResponse } from "../utils/error.js";
@@ -9,8 +11,14 @@ import {
   checkExistingUser,
   comparePassword,
   registerUserService,
+  setResetPassToken,
+  findUserWithToken,
+  updatePasswordAndResetToken,
 } from "../services/user.service.js";
-import { generateToken } from "../utils/token.js";
+import { generateToken, resetPassToken } from "../utils/token.js";
+import { sendEmail } from "../utils/mail.js";
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
 export const registerUserController = async (req, res) => {
   try {
@@ -140,5 +148,96 @@ export const logoutUserController = async (_, res) => {
   } catch (error) {
     console.error("Logout User Error: ", error);
     return res.status(500).json(errorResponse("Internal Server error"));
+  }
+};
+
+export const generateResetPassTokenController = async (req, res) => {
+  try {
+    const validateData = await generateResetPassTokenValidation.safeParseAsync(
+      req.body
+    );
+    if (!validateData.success) {
+      const formattedError = z.treeifyError(validateData.error);
+      return res
+        .status(400)
+        .json(errorResponse("Invalid Request", formattedError));
+    }
+
+    const { email } = validateData.data;
+
+    const user = await checkExistingUser(email);
+
+    if (!user) {
+      return res
+        .status(404)
+        .json(
+          errorResponse(
+            "User not found",
+            "User with this email does not exists"
+          )
+        );
+    }
+
+    const { token, hashedToken, expires } = resetPassToken();
+
+    await setResetPassToken(hashedToken, expires, user.id);
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-token/${token}`;
+
+    await sendEmail(
+      email,
+      "Reset your password",
+      `Hello ${user.name}, reset your password using this link: ${resetUrl}`,
+      `<p>Hello ${user.name},</p>
+       <p>Click the link below to reset your password:</p>
+       <a href="${resetUrl}">Reset Password</a>
+       <p>This link is valid for only 15 minutes.</p>`
+    );
+
+    return res
+      .status(200)
+      .json(successResponse("Password reset link sent to your email"));
+  } catch (error) {
+    console.error("Forget Password Error: ", error);
+    return res.status(500).json(errorResponse("Internal Server Error"));
+  }
+};
+
+export const resetPasswordController = async (req, res) => {
+  try {
+    const validateData = await resetPasswordValidation.safeParseAsync(req.body);
+    if (!validateData.success) {
+      const formattedError = z.treeifyError(validateData.error);
+      return res
+        .status(400)
+        .json(errorResponse("Invalid Request", formattedError));
+    }
+    const { newPassword } = validateData.data;
+    const { token } = req.params;
+
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await findUserWithToken(hashedToken);
+    if (!user) {
+      return res
+        .status(400)
+        .json(
+          errorResponse(
+            "Invalid or expired token",
+            "Please request a new reset link"
+          )
+        );
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await updatePasswordAndResetToken(user.id, hashedPassword);
+
+    return res
+      .status(200)
+      .json(successResponse("Password reset successfull, you can now login"));
+  } catch (error) {
+    console.error("Reset Password Error: ", error);
+    return res.status(500).json(errorResponse("Internal Server Error"));
   }
 };
