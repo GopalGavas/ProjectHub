@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
 import { usersTable } from "../models/user.model.js";
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, ilike, or, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export const checkExistingUser = async (email) => {
@@ -58,6 +58,38 @@ export const getUserById = async (userId) => {
     .where(eq(usersTable.id, userId));
 
   return user;
+};
+
+export const getAllUsers = async ({ offset = 0, limit = 10, search = "" }) => {
+  const whereClause = search
+    ? or(
+        ilike(usersTable.name, `%${search}%`),
+        ilike(usersTable.email, `%${search}%`)
+      )
+    : undefined;
+
+  const users = await db
+    .select({
+      id: usersTable.id,
+      name: usersTable.name,
+      email: usersTable.email,
+      role: usersTable.role,
+      createdAt: usersTable.createdAt,
+    })
+    .from(usersTable)
+    .where(whereClause)
+    .limit(limit)
+    .offset(offset)
+    .orderBy(usersTable.createdAt, "desc");
+
+  const totalCountResult = await db
+    .select({ count: sql`COUNT(*)` })
+    .from(usersTable)
+    .where(whereClause);
+
+  const totalCount = parseInt(totalCountResult[0].count, 10);
+
+  return { users, totalCount };
 };
 
 export const updateUserData = async (updatedData, userId) => {

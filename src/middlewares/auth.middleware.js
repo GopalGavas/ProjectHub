@@ -40,6 +40,13 @@ export const authenticateUser = (req, res, next) => {
 export const authoriseRoles = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user || !allowedRoles.includes(req.user?.role)) {
+      console.log(
+        "Authorized Roles:",
+        allowedRoles,
+        "User Role:",
+        req.user?.role
+      );
+
       return res
         .status(403)
         .json(

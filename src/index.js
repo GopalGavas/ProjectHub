@@ -10,9 +10,11 @@ app.use(cookieParser());
 
 import authRouter from "./routes/auth.routes.js";
 import userRouter from "./routes/user.routes.js";
+import adminRouter from "./routes/admin.routes.js";
 
-app.use("/auth", authRouter);
-app.use("/users", userRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/users", userRouter);
+app.use("/api/admin", adminRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is listening on PORT ${PORT}`);
