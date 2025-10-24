@@ -156,3 +156,20 @@ export const updatePasswordAndResetToken = async (userId, newHashPassword) => {
 
   return updatePassword;
 };
+
+export const updateUserRole = async (updatedRole, userId) => {
+  const updatedUser = await db
+    .update(usersTable)
+    .set({
+      role: updatedRole,
+    })
+    .where(eq(usersTable.id, userId))
+    .returning({
+      id: usersTable.id,
+      name: usersTable.name,
+      email: usersTable.email,
+      role: usersTable.role,
+    });
+
+  return updatedUser;
+};
