@@ -1,4 +1,5 @@
 import {
+  deleteUser,
   getAllUsers,
   getUserById,
   restoreUser,
@@ -130,7 +131,7 @@ export const updateUserRoleController = async (req, res) => {
   }
 };
 
-export const deleteUserController = async (req, res) => {
+export const softDeleteUserController = async (req, res) => {
   try {
     const userId = req.params.id;
 
@@ -229,7 +230,54 @@ export const restoreUserController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("DELETE USER CONTROLLER (ADMIN) ERROR: ", error);
+    console.error("SOFT DELETE USER CONTROLLER (ADMIN) ERROR: ", error);
+    return res.status(500).json(errorResponse("Internal server Error"));
+  }
+};
+
+export const hardDeleteUserController = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    if (!userId || !isUUID(userId)) {
+      return res
+        .status(400)
+        .json(errorResponse("Invalid Request", "Enter a valid userId"));
+    }
+
+    const user = await getUserById(userId);
+
+    if (!user) {
+      return res
+        .status(404)
+        .json(
+          errorResponse(
+            "User not found",
+            `User with id:${userId} does not exists`
+          )
+        );
+    }
+
+    if (user.isActive) {
+      return res
+        .status(409)
+        .json(
+          errorResponse(
+            "User is still Active",
+            "Deactivate user before permanent deletion"
+          )
+        );
+    }
+
+    await deleteUser(userId);
+
+    return res.status(200).json(
+      successResponse("User permanently deleted", {
+        id: user.id,
+      })
+    );
+  } catch (error) {
+    console.error("PERMANENT DELETE USER CONTROLLER (ADMIN) ERROR: ", error);
     return res.status(500).json(errorResponse("Internal server Error"));
   }
 };

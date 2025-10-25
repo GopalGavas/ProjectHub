@@ -211,3 +211,7 @@ export const restoreUser = async (userId) => {
 
   return restoredUser;
 };
+
+export const deleteUser = async (userId) => {
+  await db.delete(usersTable).where(eq(usersTable.id, userId));
+};
