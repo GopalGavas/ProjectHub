@@ -4,6 +4,7 @@ import {
   varchar,
   text,
   timestamp,
+  boolean,
   pgEnum,
 } from "drizzle-orm/pg-core";
 
@@ -15,6 +16,7 @@ export const usersTable = pgTable("users", {
   email: varchar({ length: 155 }).unique().notNull(),
   password: text().notNull(),
   role: userRoleEnum("role").default("member").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

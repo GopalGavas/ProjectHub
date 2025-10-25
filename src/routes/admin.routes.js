@@ -4,6 +4,7 @@ import {
   authoriseRoles,
 } from "../middlewares/auth.middleware.js";
 import {
+  deleteUserController,
   fetchUserByIdController,
   getAllUsersController,
   updateUserRoleController,
@@ -16,6 +17,7 @@ router.use(authoriseRoles("admin"));
 
 router.get("/users/:id", fetchUserByIdController);
 router.get("/users", getAllUsersController);
+router.put("/users-delete/:id", deleteUserController);
 router.put("/users/:id", updateUserRoleController);
 
 export default router;

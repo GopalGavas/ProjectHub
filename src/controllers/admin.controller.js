@@ -1,6 +1,7 @@
 import {
   getAllUsers,
   getUserById,
+  softDeleteUser,
   updateUserRole,
 } from "../services/user.service.js";
 import { errorResponse } from "../utils/error.js";
@@ -125,5 +126,57 @@ export const updateUserRoleController = async (req, res) => {
   } catch (error) {
     console.error("ADMIN: Update User Role Error: ", error);
     return res.status(500).json(errorResponse("Internal Server Error"));
+  }
+};
+
+export const deleteUserController = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    if (!userId || !isUUID(userId)) {
+      return res
+        .status(400)
+        .json(errorResponse("Invalid Request", "Enter a valid userId"));
+    }
+
+    const user = await getUserById(userId);
+
+    if (!user) {
+      return res
+        .status(404)
+        .json(
+          errorResponse(
+            "User not found",
+            `User with id:${userId} does not exists`
+          )
+        );
+    }
+
+    if (!user.isActive) {
+      return res.status(200).json(
+        successResponse("User is already deleted", {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isActive: user.isActive,
+        })
+      );
+    }
+
+    const deletedUser = await softDeleteUser(userId);
+
+    return res.status(200).json(
+      successResponse("User deleted Successfully", {
+        id: deletedUser.id,
+        name: deletedUser.name,
+        email: deletedUser.email,
+        role: deletedUser.role,
+        isActive: deletedUser.isActive,
+      })
+    );
+  } catch (error) {
+    console.error("DELETE USER CONTROLLER (ADMIN) ERROR: ", error);
+    return res.status(500).json(errorResponse("Internal server Error"));
   }
 };

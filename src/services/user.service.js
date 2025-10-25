@@ -52,6 +52,7 @@ export const getUserById = async (userId) => {
       name: usersTable.name,
       email: usersTable.email,
       role: usersTable.role,
+      isActive: usersTable.isActive,
       password: usersTable.password,
     })
     .from(usersTable)
@@ -74,6 +75,7 @@ export const getAllUsers = async ({ offset = 0, limit = 10, search = "" }) => {
       name: usersTable.name,
       email: usersTable.email,
       role: usersTable.role,
+      isActive: usersTable.isActive,
       createdAt: usersTable.createdAt,
     })
     .from(usersTable)
@@ -149,7 +151,7 @@ export const updatePasswordAndResetToken = async (userId, newHashPassword) => {
     .update(usersTable)
     .set({
       password: newHashPassword,
-      passwordResetToke: null,
+      passwordResetToken: null,
       passwordResetExpires: null,
     })
     .where(eq(usersTable.id, userId));
@@ -172,4 +174,22 @@ export const updateUserRole = async (updatedRole, userId) => {
     });
 
   return updatedUser;
+};
+
+export const softDeleteUser = async (userId) => {
+  const [deletedUser] = await db
+    .update(usersTable)
+    .set({
+      isActive: false,
+    })
+    .where(eq(usersTable.id, userId))
+    .returning({
+      id: usersTable.id,
+      name: usersTable.name,
+      email: usersTable.email,
+      role: usersTable.role,
+      isActive: usersTable.isActive,
+    });
+
+  return deletedUser;
 };

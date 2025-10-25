@@ -15,6 +15,13 @@
       "when": 1761036141192,
       "tag": "0001_even_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1761372811153,
+      "tag": "0002_misty_iron_patriot",
+      "breakpoints": true
     }
   ]
 }

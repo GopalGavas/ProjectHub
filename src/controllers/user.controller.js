@@ -6,12 +6,14 @@ import {
   getUserById,
   updateUserData,
   updateUserPassword,
+  softDeleteUser,
 } from "../services/user.service.js";
 import {
   validateUserDetails,
   changePasswordValidation,
 } from "../validation/user.validation.js";
 import { z } from "zod";
+import { validate as isUUID } from "uuid";
 
 export const getUserProfileController = async (req, res) => {
   try {
@@ -155,5 +157,53 @@ export const changePasswordController = async (req, res) => {
   } catch (error) {
     console.error("Update Password failed: ", error);
     return res.status(500).json(errorResponse("Internal server error"));
+  }
+};
+
+export const selfDeleteUserController = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    if (!userId || !isUUID(userId)) {
+      return res.status(400).json(errorResponse("Invalid Request", ""));
+    }
+
+    const user = await getUserById(userId);
+
+    if (!user) {
+      return res
+        .status(404)
+        .json(
+          errorResponse(
+            "User not found",
+            `User with id:${userId} does not exists`
+          )
+        );
+    }
+
+    if (!user.isActive) {
+      return res.status(200).json(
+        successResponse("User is already deleted", {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isActive: user.isActive,
+        })
+      );
+    }
+
+    await softDeleteUser(userId);
+
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    return res.status(200).json(successResponse("User deleted Successfully"));
+  } catch (error) {
+    console.error("SELF DELETE USER CONTROLLER ERROR: ", error);
+    return res.status(500).json(errorResponse("Internal server Error"));
   }
 };
