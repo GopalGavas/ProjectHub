@@ -7,6 +7,7 @@ import {
   deleteUserController,
   fetchUserByIdController,
   getAllUsersController,
+  restoreUserController,
   updateUserRoleController,
 } from "../controllers/admin.controller.js";
 
@@ -18,6 +19,7 @@ router.use(authoriseRoles("admin"));
 router.get("/users/:id", fetchUserByIdController);
 router.get("/users", getAllUsersController);
 router.put("/users-delete/:id", deleteUserController);
+router.put("/users-restore/:id", restoreUserController);
 router.put("/users/:id", updateUserRoleController);
 
 export default router;

@@ -193,3 +193,21 @@ export const softDeleteUser = async (userId) => {
 
   return deletedUser;
 };
+
+export const restoreUser = async (userId) => {
+  const [restoredUser] = await db
+    .update(usersTable)
+    .set({
+      isActive: true,
+    })
+    .where(eq(usersTable.id, userId))
+    .returning({
+      id: usersTable.id,
+      name: usersTable.name,
+      email: usersTable.email,
+      role: usersTable.role,
+      isActive: usersTable.isActive,
+    });
+
+  return restoredUser;
+};

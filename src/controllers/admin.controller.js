@@ -1,6 +1,7 @@
 import {
   getAllUsers,
   getUserById,
+  restoreUser,
   softDeleteUser,
   updateUserRole,
 } from "../services/user.service.js";
@@ -173,6 +174,58 @@ export const deleteUserController = async (req, res) => {
         email: deletedUser.email,
         role: deletedUser.role,
         isActive: deletedUser.isActive,
+      })
+    );
+  } catch (error) {
+    console.error("DELETE USER CONTROLLER (ADMIN) ERROR: ", error);
+    return res.status(500).json(errorResponse("Internal server Error"));
+  }
+};
+
+export const restoreUserController = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    if (!userId || !isUUID(userId)) {
+      return res
+        .status(400)
+        .json(errorResponse("Invalid Request", "Enter a valid userId"));
+    }
+
+    const user = await getUserById(userId);
+
+    if (!user) {
+      return res
+        .status(404)
+        .json(
+          errorResponse(
+            "User not found",
+            `User with id:${userId} does not exists`
+          )
+        );
+    }
+
+    if (user.isActive) {
+      return res.status(200).json(
+        successResponse("User is already active", {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isActive: user.isActive,
+        })
+      );
+    }
+
+    const restoredUser = await restoreUser(userId);
+
+    return res.status(200).json(
+      successResponse("User Restored Successfully", {
+        id: restoredUser.id,
+        name: restoredUser.name,
+        email: restoredUser.email,
+        role: restoredUser.role,
+        isActive: restoredUser.isActive,
       })
     );
   } catch (error) {
