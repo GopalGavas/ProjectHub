@@ -6,6 +6,7 @@ import {
   timestamp,
   boolean,
   pgEnum,
+  integer,
 } from "drizzle-orm/pg-core";
 
 export const userRoleEnum = pgEnum("role", ["admin", "member", "guest"]);
@@ -22,6 +23,7 @@ export const usersTable = pgTable("users", {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
+  tokenVersion: integer("token_version").default(0).notNull(),
   passwordResetToken: text("password_reset_token"),
   passwordResetExpires: timestamp("password_reset_expires"),
 });

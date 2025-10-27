@@ -12,6 +12,8 @@ export const checkExistingUser = async (email) => {
       email: usersTable.email,
       password: usersTable.password,
       role: usersTable.role,
+      isActive: usersTable.isActive,
+      tokenVersion: usersTable.tokenVersion,
     })
     .from(usersTable)
     .where(eq(usersTable.email, formattedEmail));
@@ -54,6 +56,7 @@ export const getUserById = async (userId) => {
       role: usersTable.role,
       isActive: usersTable.isActive,
       password: usersTable.password,
+      tokenVersion: usersTable.tokenVersion,
     })
     .from(usersTable)
     .where(eq(usersTable.id, userId));
@@ -192,6 +195,22 @@ export const softDeleteUser = async (userId) => {
     });
 
   return deletedUser;
+};
+
+export const changeTokenVersion = async (userId) => {
+  return await db
+    .update(usersTable)
+    .set({ tokenVersion: sql`${usersTable.tokenVersion} + 1` })
+    .where(eq(usersTable.id, userId))
+    .returning();
+};
+
+export const softDeleteAndChangeTokenTransaction = async (userId) => {
+  return await db.transaction(async (tx) => {
+    const deletedUser = await softDeleteUser(userId, tx);
+    await changeTokenVersion(userId, tx);
+    return deletedUser;
+  });
 };
 
 export const restoreUser = async (userId) => {

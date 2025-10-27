@@ -1,7 +1,8 @@
 import jwt from "jsonwebtoken";
 import { errorResponse } from "../utils/error.js";
+import { getUserById } from "../services/user.service.js";
 
-export const authenticateUser = (req, res, next) => {
+export const authenticateUser = async (req, res, next) => {
   try {
     const token =
       req.cookies?.token || req.header("Authorization")?.replace("Bearer ", "");
@@ -14,7 +15,27 @@ export const authenticateUser = (req, res, next) => {
 
     const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = decodedToken;
+    const user = await getUserById(decodedToken.id);
+
+    if (!user) {
+      return res
+        .status(401)
+        .json(errorResponse("Unauthorized", "User not found"));
+    }
+
+    if (!user.isActive) {
+      return res
+        .status(401)
+        .json(errorResponse("Account Disabled", "Contact support"));
+    }
+
+    if (user.tokenVersion !== decodedToken.tokenVersion) {
+      return res
+        .status(401)
+        .json(errorResponse("Session Expired", "Please login again"));
+    }
+
+    req.user = user;
 
     next();
   } catch (error) {

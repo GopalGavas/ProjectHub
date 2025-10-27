@@ -195,13 +195,11 @@ export const selfDeleteUserController = async (req, res) => {
 
     await softDeleteUser(userId);
 
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
+    res.clearCookie("token");
 
-    return res.status(200).json(successResponse("User deleted Successfully"));
+    return res
+      .status(200)
+      .json(successResponse("Your Accound Disabled Successfully"));
   } catch (error) {
     console.error("SELF DELETE USER CONTROLLER ERROR: ", error);
     return res.status(500).json(errorResponse("Internal server Error"));

@@ -19,6 +19,7 @@ import { generateToken, resetPassToken } from "../utils/token.js";
 import { sendEmail } from "../utils/mail.js";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import { checkIsUserActive } from "../utils/user.status.js";
 
 export const registerUserController = async (req, res) => {
   try {
@@ -85,6 +86,8 @@ export const loginUserController = async (req, res) => {
         );
     }
 
+    checkIsUserActive(existingUser);
+
     const isPasswordValid = await comparePassword(
       password,
       existingUser.password
@@ -105,6 +108,7 @@ export const loginUserController = async (req, res) => {
       id: existingUser.id,
       email: existingUser.email,
       role: existingUser.role,
+      tokenVersion: existingUser.tokenVersion,
     };
 
     const token = generateToken(payload);
@@ -177,6 +181,8 @@ export const generateResetPassTokenController = async (req, res) => {
           )
         );
     }
+
+    checkIsUserActive(user);
 
     const { token, hashedToken, expires } = resetPassToken();
 

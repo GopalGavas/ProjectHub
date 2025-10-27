@@ -3,8 +3,8 @@ import {
   getAllUsers,
   getUserById,
   restoreUser,
-  softDeleteUser,
   updateUserRole,
+  softDeleteAndChangeTokenTransaction,
 } from "../services/user.service.js";
 import { errorResponse } from "../utils/error.js";
 import { successResponse } from "../utils/response.js";
@@ -166,10 +166,10 @@ export const softDeleteUserController = async (req, res) => {
       );
     }
 
-    const deletedUser = await softDeleteUser(userId);
+    const deletedUser = await softDeleteAndChangeTokenTransaction(userId);
 
     return res.status(200).json(
-      successResponse("User deleted Successfully", {
+      successResponse("User Account Deactivated Successfully", {
         id: deletedUser.id,
         name: deletedUser.name,
         email: deletedUser.email,

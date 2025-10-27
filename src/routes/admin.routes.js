@@ -19,9 +19,9 @@ router.use(authoriseRoles("admin"));
 
 router.get("/users/:id", fetchUserByIdController);
 router.get("/users", getAllUsersController);
-router.put("/users-delete/:id", softDeleteUserController);
-router.put("/users-restore/:id", restoreUserController);
-router.put("/users/:id", updateUserRoleController);
-router.delete("/users/:id", hardDeleteUserController);
+router.put("/users/deactivate/:id", softDeleteUserController);
+router.put("/users/restore/:id", restoreUserController);
+router.put("/users/role/:id", updateUserRoleController);
+router.delete("/users/delete/:id", hardDeleteUserController);
 
 export default router;
