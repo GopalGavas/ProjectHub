@@ -1,9 +1,12 @@
-import { pgTable, uuid, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, uuid, pgEnum, timestamp } from "drizzle-orm/pg-core";
 import { projectsTable } from "./projects.model";
 import { usersTable } from "./user.model";
-import { timestamp } from "drizzle-orm/gel-core";
 
-export const memberRoleEnum = pgEnum("role", ["owner", "manager", "member"]);
+export const memberRoleEnum = pgEnum("project_member_role", [
+  "owner",
+  "manager",
+  "member",
+]);
 
 export const projectMembersTable = pgTable("project_members", {
   id: uuid().primaryKey().defaultRandom(),
@@ -20,5 +23,5 @@ export const projectMembersTable = pgTable("project_members", {
 
   role: memberRoleEnum("role").default("member").notNull(),
 
-  joinedAt: timestamp("joined_at").defaultNow(),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
 });
