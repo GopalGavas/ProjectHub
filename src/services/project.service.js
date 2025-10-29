@@ -39,3 +39,49 @@ export const addProjectMembersService = async (projectId, members) => {
 
   await db.insert(projectMembersTable).values(formattedMembers);
 };
+
+export const getProjectByIdService = async (projectId) => {
+  const rows = await db
+    .select({
+      projectId: projectsTable.id,
+      projectName: projectsTable.projectName,
+      projectDescription: projectsTable.projectDescription,
+      ownerId: projectsTable.ownerId,
+      isActive: projectsTable.isActive,
+      createdAt: projectsTable.createdAt,
+      memberId: projectMembersTable.userId,
+      memberRole: projectMembersTable.role,
+      memberJoinedAt: projectMembersTable.joinedAt,
+      memberName: usersTable.name,
+      memberEmail: usersTable.email,
+    })
+    .from(projectsTable)
+    .leftJoin(
+      projectMembersTable,
+      eq(projectsTable.id, projectMembersTable.projectId)
+    )
+    .leftJoin(usersTable, eq(usersTable.id, projectMembersTable.userId))
+    .where(eq(projectsTable.id, projectId));
+
+  if (!rows.length) return null;
+
+  const project = {
+    id: rows[0].projectId,
+    projectName: rows[0].projectName,
+    projectDescription: rows[0].projectDescription,
+    ownerId: rows[0].ownerId,
+    isActive: rows[0].isActive,
+    createdAt: rows[0].createdAt,
+    members: rows
+      .filter((r) => r.memberId)
+      .map((r) => ({
+        id: r.memberId,
+        name: r.memberName,
+        email: r.memberEmail,
+        role: r.memberRole,
+        joinedAt: r.memberJoinedAt,
+      })),
+  };
+
+  return project;
+};

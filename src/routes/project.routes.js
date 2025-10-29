@@ -3,7 +3,10 @@ import {
   authenticateUser,
   authoriseRoles,
 } from "../middlewares/auth.middleware.js";
-import { createProjectController } from "../controllers/projects.controller.js";
+import {
+  createProjectController,
+  getProjectByIdController,
+} from "../controllers/projects.controller.js";
 
 const router = Router();
 
@@ -13,5 +16,7 @@ router.post(
   authoriseRoles("admin"),
   createProjectController
 );
+
+router.get("/:id", authenticateUser, getProjectByIdController);
 
 export default router;

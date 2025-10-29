@@ -6,6 +6,7 @@ import {
   addProjectMembersService,
   checkExistingUsersService,
   createProjectService,
+  getProjectByIdService,
 } from "../services/project.service.js";
 import { validate as isUUID } from "uuid";
 import { db } from "../db/index.js";
@@ -76,6 +77,48 @@ export const createProjectController = async (req, res) => {
     );
   } catch (error) {
     console.error("Error in Create Project Controller: ", error);
+    return res.status(500).json(errorResponse("Internal Server Error"));
+  }
+};
+
+export const getAllProjectsController = async (req, res) => {
+  try {
+  } catch (error) {
+    console.error("Error in Get All Projects Controller: ", error);
+    return res.status(500).json(errorResponse("Internal Server Error"));
+  }
+};
+
+export const getProjectByIdController = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+
+    if (!projectId || !isUUID(projectId)) {
+      return res
+        .status(400)
+        .json(errorResponse("Invalid Request", "Please provide a valid UUID"));
+    }
+
+    const project = await getProjectByIdService(projectId);
+
+    if (!project) {
+      return res
+        .status(404)
+        .json(
+          errorResponse(
+            "Project not found",
+            "Project with this Id do not exists"
+          )
+        );
+    }
+
+    return res.status(200).json(
+      successResponse("Project fetched successfully", {
+        project,
+      })
+    );
+  } catch (error) {
+    console.error("Error in Get Project By Id Controller: ", error);
     return res.status(500).json(errorResponse("Internal Server Error"));
   }
 };
