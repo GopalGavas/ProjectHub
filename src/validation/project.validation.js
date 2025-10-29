@@ -13,5 +13,13 @@ export const createProjectValidation = z.object({
     .max(500, "Project description must be less than 500 characters")
     .optional(),
 
-  members: z.array(z.uuid("Invalid uuid format")).optional().default([]),
+  members: z
+    .array(
+      z.object({
+        userId: z.string(),
+        role: z.enum(["owner", "manager", "member"]).default("member"),
+      })
+    )
+    .optional()
+    .default([]),
 });

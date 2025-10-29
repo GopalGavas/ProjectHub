@@ -6,7 +6,7 @@ import {
   timestamp,
   boolean,
 } from "drizzle-orm/pg-core";
-import { usersTable } from "./user.model";
+import { usersTable } from "./user.model.js";
 
 export const projectsTable = pgTable("projects", {
   id: uuid().primaryKey().defaultRandom(),

@@ -1,6 +1,6 @@
 import { pgTable, uuid, pgEnum, timestamp } from "drizzle-orm/pg-core";
-import { projectsTable } from "./projects.model";
-import { usersTable } from "./user.model";
+import { projectsTable } from "./projects.model.js";
+import { usersTable } from "./user.model.js";
 
 export const memberRoleEnum = pgEnum("project_member_role", [
   "owner",
