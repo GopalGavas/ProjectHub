@@ -5,6 +5,7 @@ import {
 } from "../middlewares/auth.middleware.js";
 import {
   createProjectController,
+  getAllProjectsController,
   getProjectByIdController,
 } from "../controllers/projects.controller.js";
 
@@ -18,5 +19,6 @@ router.post(
 );
 
 router.get("/:id", authenticateUser, getProjectByIdController);
+router.get("/", authenticateUser, getAllProjectsController);
 
 export default router;

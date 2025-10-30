@@ -6,6 +6,7 @@ import {
   addProjectMembersService,
   checkExistingUsersService,
   createProjectService,
+  getAllProjectsService,
   getProjectByIdService,
 } from "../services/project.service.js";
 import { validate as isUUID } from "uuid";
@@ -81,14 +82,6 @@ export const createProjectController = async (req, res) => {
   }
 };
 
-export const getAllProjectsController = async (req, res) => {
-  try {
-  } catch (error) {
-    console.error("Error in Get All Projects Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
-  }
-};
-
 export const getProjectByIdController = async (req, res) => {
   try {
     const projectId = req.params.id;
@@ -119,6 +112,37 @@ export const getProjectByIdController = async (req, res) => {
     );
   } catch (error) {
     console.error("Error in Get Project By Id Controller: ", error);
+    return res.status(500).json(errorResponse("Internal Server Error"));
+  }
+};
+
+export const getAllProjectsController = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search = "" } = req.query;
+
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const offset = (pageNum - 1) * limitNum;
+
+    const { projectWithMembers, totalCount } = await getAllProjectsService({
+      offset,
+      limit: limitNum,
+      search,
+    });
+
+    return res.status(200).json(
+      successResponse("All Projects fetched Successfully", {
+        data: projectWithMembers,
+        pagination: {
+          total: totalCount,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(totalCount / limitNum),
+        },
+      })
+    );
+  } catch (error) {
+    console.error("Error in Get All Projects Controller: ", error);
     return res.status(500).json(errorResponse("Internal Server Error"));
   }
 };
