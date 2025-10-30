@@ -1,13 +1,18 @@
 import { successResponse } from "../utils/response.js";
 import { errorResponse } from "../utils/error.js";
-import { createProjectValidation } from "../validation/project.validation.js";
+import {
+  createProjectValidation,
+  updateProjectValidation,
+} from "../validation/project.validation.js";
 import { z } from "zod";
 import {
   addProjectMembersService,
+  checkExistingProjectService,
   checkExistingUsersService,
   createProjectService,
   getAllProjectsService,
   getProjectByIdService,
+  updateProjectService,
 } from "../services/project.service.js";
 import { validate as isUUID } from "uuid";
 import { db } from "../db/index.js";
@@ -143,6 +148,47 @@ export const getAllProjectsController = async (req, res) => {
     );
   } catch (error) {
     console.error("Error in Get All Projects Controller: ", error);
+    return res.status(500).json(errorResponse("Internal Server Error"));
+  }
+};
+
+export const updateProjectController = async (req, res) => {
+  try {
+    const validateData = await updateProjectValidation.safeParseAsync(req.body);
+    if (!validateData.success) {
+      const formattedError = z.treeifyError(validateData.error);
+      return res
+        .status(400)
+        .json(errorResponse("Invalid Request", formattedError));
+    }
+
+    const { projectName, projectDescription } = validateData.data;
+    const projectId = req.params.id;
+
+    const existing = await checkExistingProjectService(projectId);
+
+    if (existing) {
+      return res
+        .status(404)
+        .json(
+          errorResponse(
+            "Project Not found",
+            "Project with provided id does not exists"
+          )
+        );
+    }
+
+    const updatedProject = await updateProjectService(
+      projectId,
+      projectName,
+      projectDescription
+    );
+
+    return res
+      .status(200)
+      .json(successResponse("Project Updated Successfully", updatedProject));
+  } catch (error) {
+    console.error("Error in Update Project Controller: ", error);
     return res.status(500).json(errorResponse("Internal Server Error"));
   }
 };

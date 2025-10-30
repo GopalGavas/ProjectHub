@@ -7,6 +7,7 @@ import {
   createProjectController,
   getAllProjectsController,
   getProjectByIdController,
+  updateProjectController,
 } from "../controllers/projects.controller.js";
 
 const router = Router();
@@ -20,5 +21,6 @@ router.post(
 
 router.get("/:id", authenticateUser, getProjectByIdController);
 router.get("/", authenticateUser, getAllProjectsController);
+router.put("/:id", authenticateUser, updateProjectController);
 
 export default router;

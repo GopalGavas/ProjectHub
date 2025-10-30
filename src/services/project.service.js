@@ -157,3 +157,31 @@ export const getAllProjectsService = async ({
 
   return { projectWithMembers, totalCount };
 };
+
+export const checkExistingProjectService = async (projectId) => {
+  const [project] = await db
+    .select()
+    .from(projectsTable)
+    .where(eq(projectsTable.id, projectId))
+    .returning();
+
+  return project;
+};
+
+export const updateProjectService = async (
+  projectId,
+  projectName,
+  projectDescription
+) => {
+  const [updatedProject] = await db
+    .update(projectsTable)
+    .set({
+      ...(projectName && { projectName }),
+      ...(projectDescription && { projectDescription }),
+      updatedAt: new Date(),
+    })
+    .where(eq(projectsTable.id, projectId))
+    .returning();
+
+  return updatedProject;
+};

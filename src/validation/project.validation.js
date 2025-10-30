@@ -23,3 +23,23 @@ export const createProjectValidation = z.object({
     .optional()
     .default([]),
 });
+
+export const updateProjectValidation = z
+  .object({
+    projectName: z
+      .string()
+      .trim()
+      .min(2, "Project Name must be atleast 2 characters long")
+      .max(100, "Project name must be less than 100 characters")
+      .optional(),
+
+    projectDescription: z
+      .string()
+      .trim()
+      .max(500, "Project description must be less than 500 characters")
+      .optional(),
+  })
+  .refine(
+    (data) => data.projectName || data.projectDescription,
+    "Atleast one field (projectName or projectDescription) must be provided for update"
+  );
