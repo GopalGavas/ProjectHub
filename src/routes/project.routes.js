@@ -4,9 +4,11 @@ import {
   authoriseRoles,
 } from "../middlewares/auth.middleware.js";
 import {
+  addMembersToProjectController,
   createProjectController,
   getAllProjectsController,
   getProjectByIdController,
+  removeMembersFromProjectController,
   updateProjectController,
 } from "../controllers/projects.controller.js";
 
@@ -22,5 +24,11 @@ router.post(
 router.get("/:id", authenticateUser, getProjectByIdController);
 router.get("/", authenticateUser, getAllProjectsController);
 router.put("/:id", authenticateUser, updateProjectController);
+router.post("/:id/members", authenticateUser, addMembersToProjectController);
+router.delete(
+  "/:id/members",
+  authenticateUser,
+  removeMembersFromProjectController
+);
 
 export default router;

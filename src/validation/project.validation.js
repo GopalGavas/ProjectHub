@@ -43,3 +43,20 @@ export const updateProjectValidation = z
     (data) => data.projectName || data.projectDescription,
     "Atleast one field (projectName or projectDescription) must be provided for update"
   );
+
+export const addMemberToProjectValidation = z.object({
+  members: z
+    .array(
+      z.object({
+        userId: z.string(),
+        role: z.enum(["owner", "manager", "member"]).default("member"),
+      })
+    )
+    .refine((arr) => arr.length > 0, {
+      message: "At least one member must be provided",
+    }),
+});
+
+export const removeMemberFromProjectValidation = z.object({
+  members: z.array(z.string()).min(1, "Atleast one memberId must be provided"),
+});

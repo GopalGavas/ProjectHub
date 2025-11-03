@@ -1,17 +1,21 @@
 import { successResponse } from "../utils/response.js";
 import { errorResponse } from "../utils/error.js";
 import {
+  addMemberToProjectValidation,
   createProjectValidation,
+  removeMemberFromProjectValidation,
   updateProjectValidation,
 } from "../validation/project.validation.js";
 import { z } from "zod";
 import {
   addProjectMembersService,
+  checkAddedMembersService,
   checkExistingProjectService,
   checkExistingUsersService,
   createProjectService,
   getAllProjectsService,
   getProjectByIdService,
+  removeProjectMemberService,
   roleBasedUpdateProjectService,
   updateProjectService,
 } from "../services/project.service.js";
@@ -206,6 +210,182 @@ export const updateProjectController = async (req, res) => {
       .json(successResponse("Project Updated Successfully", updatedProject));
   } catch (error) {
     console.error("Error in Update Project Controller: ", error);
+    return res.status(500).json(errorResponse("Internal Server Error"));
+  }
+};
+
+export const addMembersToProjectController = async (req, res) => {
+  try {
+    const validateData = await addMemberToProjectValidation.safeParseAsync(
+      req.body
+    );
+
+    if (!validateData.success) {
+      const formattedError = z.treeifyError(validateData.error);
+      return res
+        .status(400)
+        .json(errorResponse("Invalid Request", formattedError));
+    }
+
+    const { members } = validateData.data;
+    const projectId = req.params.id;
+
+    const invalidIds = members.filter((m) => !isUUID(m.userId));
+    if (invalidIds.length > 0) {
+      return res
+        .status(400)
+        .json(errorResponse("Invalid userId(s) in the members list"));
+    }
+
+    const existingProject = await checkExistingProjectService(projectId);
+    if (!existingProject) {
+      return res
+        .status(404)
+        .json(
+          errorResponse(
+            "Project not found",
+            "Project with provided Id does not exists"
+          )
+        );
+    }
+
+    const { isOwner, isManager } = await roleBasedUpdateProjectService(
+      projectId,
+      req.user.id
+    );
+
+    if (!isOwner && !isManager) {
+      return res
+        .status(403)
+        .json(
+          errorResponse(
+            "Forbidden",
+            "Only the project owner or manager can add members to this project"
+          )
+        );
+    }
+
+    const userIds = members.map((m) => m.userId);
+    const existingUsers = await checkExistingUsersService(userIds);
+    const existingUsersIds = existingUsers.map((m) => m.id);
+    const missingIds = userIds.filter((id) => !existingUsersIds.includes(id));
+    if (missingIds.length > 0) {
+      return res
+        .status(400)
+        .json(errorResponse("Some provided users do not exist", missingIds));
+    }
+
+    const existingMembers = await checkAddedMembersService(projectId, userIds);
+
+    if (existingMembers.length > 0) {
+      const existingIds = existingMembers.map((m) => m.userId);
+      return res
+        .status(400)
+        .json(
+          errorResponse("Some users are already project members", existingIds)
+        );
+    }
+
+    const addedMembers = await db.transaction(async (tx) => {
+      return await addProjectMembersService(projectId, members, tx);
+    });
+
+    return res.status(201).json(
+      successResponse("New members added successfully", {
+        count: addedMembers.length || 0,
+        addedMembers: addedMembers || [],
+      })
+    );
+  } catch (error) {
+    console.error("Error in Add-Members-To-Project Controller: ", error);
+    return res.status(500).json(errorResponse("Internal Server Error"));
+  }
+};
+
+export const removeMembersFromProjectController = async (req, res) => {
+  try {
+    const validateData = await removeMemberFromProjectValidation.safeParseAsync(
+      req.body
+    );
+    if (!validateData.success) {
+      const formattedError = z.treeifyError(validateData.error);
+      return res
+        .status(400)
+        .json(errorResponse("Invalid Request", formattedError));
+    }
+
+    const { members } = validateData.data;
+    const projectId = req.params.id;
+
+    const invalidIds = members.filter((m) => !isUUID(m));
+    if (invalidIds.length > 0) {
+      return res
+        .status(400)
+        .json(errorResponse("Invalid userId(s) in the members list"));
+    }
+
+    const existingProject = await checkExistingProjectService(projectId);
+    if (!existingProject) {
+      return res
+        .status(404)
+        .json(
+          errorResponse(
+            "Project not found",
+            "Project with provided Id does not exists"
+          )
+        );
+    }
+
+    const { isOwner, isManager } = await roleBasedUpdateProjectService(
+      projectId,
+      req.user.id
+    );
+
+    if (!isOwner && !isManager) {
+      return res
+        .status(403)
+        .json(
+          errorResponse(
+            "Forbidden",
+            "Only the project owner or manager can add members to this project"
+          )
+        );
+    }
+
+    const ownerId = existingProject.ownerId;
+    if (members.includes(ownerId)) {
+      return res
+        .status(400)
+        .json(errorResponse("You cannot remove the owner of the project"));
+    }
+
+    const existingMembers = await checkAddedMembersService(projectId, members);
+    const existingIds = existingMembers.map((m) => m.userId);
+
+    const missingIds = existingIds.filter((id) => !existingIds.includes(id));
+    if (missingIds.length > 0) {
+      return res
+        .status(400)
+        .json(
+          errorResponse(
+            "Some provided members are not part of this project",
+            missingIds
+          )
+        );
+    }
+
+    const removedMembers = await db.transaction(async (tx) => {
+      return await removeProjectMemberService(projectId, members, tx);
+    });
+
+    return res.status(200).json(
+      successResponse("Members removed successfully", {
+        count: removedMembers?.length || 0,
+        removed: removedMembers || [],
+      })
+    );
+  } catch (error) {
+    console.error("Error in Remove-Members-From-Project Controller: ", error);
     return res.status(500).json(errorResponse("Internal Server Error"));
   }
 };

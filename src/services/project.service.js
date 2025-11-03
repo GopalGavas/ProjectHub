@@ -30,14 +30,23 @@ export const checkExistingUsersService = async (userIds) => {
   return users;
 };
 
-export const addProjectMembersService = async (projectId, members) => {
+export const addProjectMembersService = async (projectId, members, tx = db) => {
   const formattedMembers = members.map((m) => ({
     projectId,
     userId: m.userId,
     role: m.role || "member",
   }));
 
-  await db.insert(projectMembersTable).values(formattedMembers);
+  const inserted = await tx
+    .insert(projectMembersTable)
+    .values(formattedMembers)
+    .returning({
+      userId: projectMembersTable.userId,
+      role: projectMembersTable.role,
+      projectId: projectMembersTable.projectId,
+    });
+
+  return inserted;
 };
 
 export const getProjectByIdService = async (projectId) => {
@@ -212,4 +221,33 @@ export const roleBasedUpdateProjectService = async (projectId, userId) => {
     isOwner: project?.ownerId === userId,
     isManager: !!manager,
   };
+};
+
+export const checkAddedMembersService = async (projectId, userIds) => {
+  const existingMembers = await db
+    .select({ userId: projectMembersTable.userId })
+    .from(projectMembersTable)
+    .where(
+      and(
+        eq(projectMembersTable.projectId, projectId),
+        inArray(projectMembersTable.userId, userIds)
+      )
+    );
+
+  return existingMembers;
+};
+
+export const removeProjectMemberService = async (
+  projectId,
+  membersId,
+  tx = db
+) => {
+  return await tx
+    .delete(projectMembersTable)
+    .where(
+      and(
+        eq(projectMembersTable.projectId, projectId),
+        inArray(projectMembersTable.userId, membersId)
+      )
+    );
 };
