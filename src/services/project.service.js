@@ -162,8 +162,7 @@ export const checkExistingProjectService = async (projectId) => {
   const [project] = await db
     .select()
     .from(projectsTable)
-    .where(eq(projectsTable.id, projectId))
-    .returning();
+    .where(eq(projectsTable.id, projectId));
 
   return project;
 };
@@ -184,4 +183,33 @@ export const updateProjectService = async (
     .returning();
 
   return updatedProject;
+};
+
+export const roleBasedUpdateProjectService = async (projectId, userId) => {
+  const [project] = await db
+    .select({
+      ownerId: projectsTable.ownerId,
+    })
+    .from(projectsTable)
+    .where(eq(projectsTable.id, projectId))
+    .limit(1);
+
+  const [manager] = await db
+    .select({
+      userId: projectMembersTable.userId,
+    })
+    .from(projectMembersTable)
+    .where(
+      and(
+        eq(projectMembersTable.projectId, projectId),
+        eq(projectMembersTable.userId, userId),
+        eq(projectMembersTable.role, "manager")
+      )
+    )
+    .limit(1);
+
+  return {
+    isOwner: project?.ownerId === userId,
+    isManager: !!manager,
+  };
 };

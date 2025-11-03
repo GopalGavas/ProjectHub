@@ -12,6 +12,7 @@ import {
   createProjectService,
   getAllProjectsService,
   getProjectByIdService,
+  roleBasedUpdateProjectService,
   updateProjectService,
 } from "../services/project.service.js";
 import { validate as isUUID } from "uuid";
@@ -167,13 +168,29 @@ export const updateProjectController = async (req, res) => {
 
     const existing = await checkExistingProjectService(projectId);
 
-    if (existing) {
+    if (!existing) {
       return res
         .status(404)
         .json(
           errorResponse(
             "Project Not found",
             "Project with provided id does not exists"
+          )
+        );
+    }
+
+    const { isOwner, isManager } = await roleBasedUpdateProjectService(
+      projectId,
+      req.user?.id
+    );
+
+    if (!isOwner && !isManager) {
+      return res
+        .status(403)
+        .json(
+          errorResponse(
+            "Forbidden",
+            "Only the project owner or manager can update this project"
           )
         );
     }
