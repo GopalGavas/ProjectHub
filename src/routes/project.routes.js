@@ -9,6 +9,8 @@ import {
   getAllProjectsController,
   getProjectByIdController,
   removeMembersFromProjectController,
+  restoreProjectController,
+  softDeleteProjectController,
   updateProjectController,
 } from "../controllers/projects.controller.js";
 
@@ -24,6 +26,8 @@ router.post(
 router.get("/:id", authenticateUser, getProjectByIdController);
 router.get("/", authenticateUser, getAllProjectsController);
 router.put("/:id", authenticateUser, updateProjectController);
+router.put("/:id/deactivate", authenticateUser, softDeleteProjectController);
+router.put("/:id/restore", authenticateUser, restoreProjectController);
 router.post("/:id/members", authenticateUser, addMembersToProjectController);
 router.delete(
   "/:id/members",

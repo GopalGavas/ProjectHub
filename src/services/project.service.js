@@ -263,3 +263,35 @@ export const userDetailsService = async (userIds) => {
 
   return userDetails;
 };
+
+export const deactivateProjectService = async (projectId) => {
+  const [deactivatedProject] = await db
+    .update(projectsTable)
+    .set({
+      isActive: false,
+    })
+    .where(eq(projectsTable.id, projectId))
+    .returning({
+      id: projectsTable.id,
+      name: projectsTable.projectName,
+      isActive: projectsTable.isActive,
+    });
+
+  return deactivatedProject;
+};
+
+export const restoreProjectService = async (projectId) => {
+  const [restoredProject] = await db
+    .update(projectsTable)
+    .set({
+      isActive: true,
+    })
+    .where(eq(projectsTable.id, projectId))
+    .returning({
+      id: projectsTable.id,
+      name: projectsTable.projectName,
+      isActive: projectsTable.isActive,
+    });
+
+  return restoredProject;
+};
