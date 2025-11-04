@@ -18,6 +18,7 @@ import {
   removeProjectMemberService,
   roleBasedUpdateProjectService,
   updateProjectService,
+  userDetailsService,
 } from "../services/project.service.js";
 import { validate as isUUID } from "uuid";
 import { db } from "../db/index.js";
@@ -362,7 +363,7 @@ export const removeMembersFromProjectController = async (req, res) => {
     const existingMembers = await checkAddedMembersService(projectId, members);
     const existingIds = existingMembers.map((m) => m.userId);
 
-    const missingIds = existingIds.filter((id) => !existingIds.includes(id));
+    const missingIds = members.filter((id) => !existingIds.includes(id));
     if (missingIds.length > 0) {
       return res
         .status(400)
@@ -374,14 +375,16 @@ export const removeMembersFromProjectController = async (req, res) => {
         );
     }
 
+    const removedMembersDetails = await userDetailsService(existingIds);
+
     const removedMembers = await db.transaction(async (tx) => {
       return await removeProjectMemberService(projectId, members, tx);
     });
 
     return res.status(200).json(
       successResponse("Members removed successfully", {
-        count: removedMembers?.length || 0,
-        removed: removedMembers || [],
+        count: removedMembers?.rowCount || 0,
+        removedMembers: removedMembersDetails,
       })
     );
   } catch (error) {

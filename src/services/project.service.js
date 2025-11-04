@@ -251,3 +251,15 @@ export const removeProjectMemberService = async (
       )
     );
 };
+
+export const userDetailsService = async (userIds) => {
+  const userDetails = await db
+    .select({
+      id: usersTable.id,
+      email: usersTable.email,
+    })
+    .from(usersTable)
+    .where(inArray(usersTable.id, userIds));
+
+  return userDetails;
+};
