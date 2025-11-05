@@ -116,102 +116,14 @@ The module relies on a relational structure to manage users, projects, and colla
 - **Comments:** Dedicated comment threads for tasks to facilitate better collaboration.
 - **Audit Trail:** Logging of all significant actions (e.g., project creation, role updates) for activity history and admin monitoring.
 
-⚙️ Controllers We’ll Be Building for the Project Module
+## TASK MODULE:
 
-Here’s the logical flow and responsibilities for each:
-
-1. createProjectController
-
-Who can access: admin only
-
-Responsibilities:
-
-Validate input (projectName, description, optional members[])
-
-Create a new project entry in projectsTable
-
-Add the creator (admin) as the "owner" in projectMembersTable
-
-Add additional members (if provided) as "manager" or "member"
-
-Return project + members data
-
-2. getAllProjectsController
-
-Who can access: admin (can see all) / member (only their projects)
-
-Responsibilities:
-
-Support pagination & filters (status, owner, etc.)
-
-Return a clean list with metadata (totalCount, etc.)
-
-3. getProjectByIdController
-
-Who can access: owner, manager, or member of that project
-
-Responsibilities:
-
-Fetch single project by ID
-
-Include project members and roles
-
-Restrict access if not part of that project
-
-4. updateProjectController
-
-Who can access: owner or manager
-
-Responsibilities:
-
-Update name, description, or status
-
-Restrict non-owners from updating ownership or deleting
-
-5. addMembersToProjectController
-
-Who can access: owner or manager
-
-Responsibilities:
-
-Accept an array of users + roles
-
-Validate if they’re existing users
-
-Prevent duplicate members
-
-6. removeMemberController
-
-Who can access: owner or manager
-
-Responsibilities:
-
-Remove a member (except owner)
-
-Restrict manager from removing other managers or owner
-
-7. softDeleteProjectController
-
-Who can access: admin only
-
-Responsibilities:
-
-Mark project as inactive
-
-Optionally cascade soft-delete tasks (later step)
-
-8. restoreProjectController
-
-Who can access: admin only
-
-Responsibilities:
-
-Reactivate a previously soft-deleted project
-
-9. (Later) hardDeleteProjectController
-
-Who can access: admin only
-
-Responsibilities:
-
-Permanently delete project & members association
+| Route                                                 | Description                         | Access                        |
+| ----------------------------------------------------- | ----------------------------------- | ----------------------------- |
+| **POST `/projects/:projectId/tasks`**                 | Create task                         | Owner, Manager                |
+| **GET `/projects/:projectId/tasks`**                  | Fetch all tasks in a project        | All members                   |
+| **GET `/projects/:projectId/tasks/:taskId`**          | Get a single task detail            | All members                   |
+| **PUT `/projects/:projectId/tasks/:taskId`**          | Update title/desc/priority/due date | Owner, Manager                |
+| **PATCH `/projects/:projectId/tasks/:taskId/assign`** | Assign task to member               | Owner, Manager                |
+| **PATCH `/projects/:projectId/tasks/:taskId/status`** | Change task status                  | Owner, Manager, Assigned user |
+| **DELETE `/projects/:projectId/tasks/:taskId`**       | Soft delete task                    | Owner, Manager                |
