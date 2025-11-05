@@ -100,12 +100,17 @@ export const getAllProjectsService = async ({
   limit = 10,
   search = "",
 }) => {
-  const whereClause = search
-    ? or(
+  let whereClause = eq(projectsTable.isActive, true);
+
+  if (search) {
+    whereClause = and(
+      eq(projectsTable.isActive, true),
+      or(
         ilike(projectsTable.projectName, `%${search}%`),
         ilike(projectsTable.projectDescription, `%${search}%`)
       )
-    : undefined;
+    );
+  }
 
   const projects = await db
     .select({

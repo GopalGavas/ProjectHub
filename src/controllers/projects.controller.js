@@ -24,6 +24,7 @@ import {
 } from "../services/project.service.js";
 import { validate as isUUID } from "uuid";
 import { db } from "../db/index.js";
+import { checkProjectIsActive } from "../utils/project.utils.js";
 
 export const createProjectController = async (req, res) => {
   try {
@@ -186,6 +187,11 @@ export const updateProjectController = async (req, res) => {
         );
     }
 
+    const ensureActive = checkProjectIsActive(existing, "update details");
+    if (ensureActive) {
+      return res.status(ensureActive.status).json(ensureActive.response);
+    }
+
     const { isOwner, isManager } = await roleBasedUpdateProjectService(
       projectId,
       req.user?.id
@@ -250,6 +256,11 @@ export const addMembersToProjectController = async (req, res) => {
             "Project with provided Id does not exists"
           )
         );
+    }
+
+    const ensureActive = checkProjectIsActive(existingProject, "add members");
+    if (ensureActive) {
+      return res.status(ensureActive.status).json(ensureActive.response);
     }
 
     const { isOwner, isManager } = await roleBasedUpdateProjectService(
@@ -337,6 +348,11 @@ export const removeMembersFromProjectController = async (req, res) => {
             "Project with provided Id does not exists"
           )
         );
+    }
+
+    const ensureActive = checkProjectIsActive(existing, "remove members");
+    if (ensureActive) {
+      return res.status(ensureActive.status).json(ensureActive.response);
     }
 
     const { isOwner, isManager } = await roleBasedUpdateProjectService(
@@ -436,8 +452,10 @@ export const softDeleteProjectController = async (req, res) => {
 
     return res.status(200).json(
       successResponse("Project Deactivated!", {
-        id: projectId,
-        deactivatedAt: new Date().toISOString(),
+        id: result.id,
+        name: result.name,
+        isActive: result.isActive,
+        restoredAt: new Date().toISOString(),
       })
     );
   } catch (error) {
@@ -483,8 +501,10 @@ export const restoreProjectController = async (req, res) => {
     }
 
     return res.status(200).json(
-      successResponse("Project Deactivated!", {
-        id: projectId,
+      successResponse("Project Restored Successfully!", {
+        id: result.id,
+        name: result.name,
+        isActive: result.isActive,
         restoredAt: new Date().toISOString(),
       })
     );
