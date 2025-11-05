@@ -21,6 +21,7 @@ import {
   updateProjectService,
   userDetailsService,
   restoreProjectService,
+  deleteProjectService,
 } from "../services/project.service.js";
 import { validate as isUUID } from "uuid";
 import { db } from "../db/index.js";
@@ -510,6 +511,64 @@ export const restoreProjectController = async (req, res) => {
     );
   } catch (error) {
     console.error("Error RestoreProject Controller: ", error);
+    return res.status(500).json(errorResponse("Internal Server Error"));
+  }
+};
+
+export const hardDeleteProjectController = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+
+    if (!projectId || !isUUID(projectId)) {
+      return res
+        .status(400)
+        .json(errorResponse("Invalid Request", "Provide a valid uuid"));
+    }
+
+    const existingProject = await checkExistingProjectService(projectId);
+    if (!existingProject) {
+      return res
+        .status(404)
+        .json(
+          errorResponse(
+            "Projet Not Found",
+            "Project with provided id does not exists"
+          )
+        );
+    }
+
+    if (existingProject.ownerId !== req.user.id) {
+      return res
+        .status(403)
+        .json(
+          errorResponse("Invalid Action", "Only owner can delete the project")
+        );
+    }
+
+    if (existingProject.isActive) {
+      return res
+        .status(400)
+        .json(
+          errorResponse(
+            "Invalid Action",
+            "You can only delete a project when it is deactivated"
+          )
+        );
+    }
+
+    await deleteProjectService(projectId);
+
+    return res.status(200).json(
+      successResponse("Project deleted successfully", {
+        deletedProject: {
+          id: projectId,
+          name: existingProject.projectName,
+          projectDescription: existingProject.projectDescription || " ",
+        },
+      })
+    );
+  } catch (error) {
+    console.error("Error in Hard Delete Project Controller: ", error);
     return res.status(500).json(errorResponse("Internal Server Error"));
   }
 };

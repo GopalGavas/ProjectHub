@@ -8,6 +8,7 @@ import {
   createProjectController,
   getAllProjectsController,
   getProjectByIdController,
+  hardDeleteProjectController,
   removeMembersFromProjectController,
   restoreProjectController,
   softDeleteProjectController,
@@ -34,5 +35,6 @@ router.delete(
   authenticateUser,
   removeMembersFromProjectController
 );
+router.delete("/:id", authenticateUser, hardDeleteProjectController);
 
 export default router;

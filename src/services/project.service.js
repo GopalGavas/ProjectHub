@@ -300,3 +300,7 @@ export const restoreProjectService = async (projectId) => {
 
   return restoredProject;
 };
+
+export const deleteProjectService = async (projectId) => {
+  await db.delete(projectsTable).where(eq(projectsTable.id, projectId));
+};
