@@ -39,3 +39,37 @@ export const createTaskValidation = z.object({
     .transform((val) => (val ? new Date(val) : null))
     .optional(),
 });
+
+export const updateTaskValidation = z.object({
+  title: z
+    .string()
+    .min(2, "title must be atleast 2 characters long")
+    .max(155, "Title's length should not be greater than 155")
+    .trim(),
+
+  description: z
+    .string()
+    .min(2, "Description must be atleast 2 characters long")
+    .max(250, "Description's length should not be greater than 155")
+    .trim()
+    .optional(),
+
+  priority: z
+    .enum(["low", "medium", "high"], {
+      errorMap: () => ({
+        message: "Task priority must be one of 3 (low, medium or high)",
+      }),
+    })
+    .default("medium"),
+
+  assignedTo: z.uuid("Invalid uuid format").optional(),
+
+  dueDate: z
+    .string()
+    .refine(
+      (val) => !val || !isNaN(Date.parse(val)),
+      "Due date must be a valid date or datetime string"
+    )
+    .transform((val) => (val ? new Date(val) : null))
+    .optional(),
+});
