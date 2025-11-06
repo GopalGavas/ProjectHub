@@ -14,27 +14,32 @@ import {
   softDeleteProjectController,
   updateProjectController,
 } from "../controllers/projects.controller.js";
+import taskRouter from "./task.routes.js";
 
 const router = Router();
 
+router.use(authenticateUser);
+
 router.post(
   "/",
-  authenticateUser,
+
   authoriseRoles("admin"),
   createProjectController
 );
 
-router.get("/:id", authenticateUser, getProjectByIdController);
-router.get("/", authenticateUser, getAllProjectsController);
-router.put("/:id", authenticateUser, updateProjectController);
-router.put("/:id/deactivate", authenticateUser, softDeleteProjectController);
-router.put("/:id/restore", authenticateUser, restoreProjectController);
-router.post("/:id/members", authenticateUser, addMembersToProjectController);
+router.get("/:id", getProjectByIdController);
+router.get("/", getAllProjectsController);
+router.put("/:id", updateProjectController);
+router.put("/:id/deactivate", softDeleteProjectController);
+router.put("/:id/restore", restoreProjectController);
+router.post("/:id/members", addMembersToProjectController);
 router.delete(
   "/:id/members",
-  authenticateUser,
+
   removeMembersFromProjectController
 );
-router.delete("/:id", authenticateUser, hardDeleteProjectController);
+router.delete("/:id", hardDeleteProjectController);
+
+router.use("/:projectId/tasks", taskRouter);
 
 export default router;

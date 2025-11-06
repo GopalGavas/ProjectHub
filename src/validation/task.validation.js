@@ -11,8 +11,8 @@ export const createTaskValidation = z.object({
     .string()
     .min(2, "Description must be atleast 2 characters long")
     .max(250, "Description's length should not be greater than 155")
-    .optional()
-    .trim(),
+    .trim()
+    .optional(),
 
   status: z
     .enum(["todo", "in-progress", "done"], {
@@ -30,7 +30,12 @@ export const createTaskValidation = z.object({
 
   assignedTo: z.uuid("Invalid uuid format").optional(),
 
-  dueDate: z.iso
-    .datetime({ message: "Due date must be a valid datetime string" })
+  dueDate: z
+    .string()
+    .refine(
+      (val) => !val || !isNaN(Date.parse(val)),
+      "Due date must be a valid date or datetime string"
+    )
+    .transform((val) => (val ? new Date(val) : null))
     .optional(),
 });

@@ -8,8 +8,8 @@ import {
   pgEnum,
   index,
 } from "drizzle-orm/pg-core";
-import { projectsTable } from "./projects.model";
-import { usersTable } from "./user.model";
+import { projectsTable } from "./projects.model.js";
+import { usersTable } from "./user.model.js";
 
 export const taskStatusEnum = pgEnum("task_status", [
   "todo",
