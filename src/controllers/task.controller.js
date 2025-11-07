@@ -6,6 +6,7 @@ import {
 import {
   checkMemberService,
   createTaskService,
+  getTaskByIdService,
   updateTaskService,
 } from "../services/task.service.js";
 import { errorResponse } from "../utils/error.js";
@@ -111,6 +112,33 @@ export const createTaskController = async (req, res) => {
   }
 };
 
+export const getTaskByIdController = async (req, res) => {
+  try {
+    const taskId = req.params.taskId;
+
+    if (!taskId || !isUUID(taskId)) {
+      return res
+        .status(400)
+        .json(errorResponse("Invalid Request", "Provide a valid Task uuid"));
+    }
+
+    const task = await getTaskByIdService(taskId);
+
+    if (!task) {
+      return res
+        .status(404)
+        .json(errorResponse("Task with provided Id does not exist"));
+    }
+
+    return res
+      .status(200)
+      .json(successResponse("Task fetched Successfully", task));
+  } catch (error) {
+    console.error("Error in Get Task By Id Controller: ", error);
+    return res.status(500).json(errorResponse("Internal Server Error"));
+  }
+};
+
 export const updateTaskController = async (req, res) => {
   try {
     const validateData = await updateTaskValidation.safeParseAsync(req.body);
@@ -146,7 +174,8 @@ export const updateTaskController = async (req, res) => {
     }
 
     const { isOwner, isManager } = await roleBasedUpdateProjectService(
-      projectId
+      projectId,
+      req.user.id
     );
 
     if (!isOwner && !isManager) {
@@ -160,8 +189,8 @@ export const updateTaskController = async (req, res) => {
         );
     }
 
-    if (assignedTo) {
-      const existingUser = await checkExistingUsersService(assignedTo);
+    if (assignedTo && typeof assignedTo === "string") {
+      const existingUser = await checkExistingUsersService([assignedTo]);
       if (!existingUser) {
         return res
           .status(404)
@@ -172,19 +201,19 @@ export const updateTaskController = async (req, res) => {
             )
           );
       }
-    }
 
-    const isMember = await checkMemberService(projectId, assignedTo);
+      const isMember = await checkMemberService(projectId, assignedTo);
 
-    if (!isMember) {
-      return res
-        .status(403)
-        .json(
-          errorResponse(
-            "Invalid Assignment",
-            "Cannot assign a task to a user who is not part of the project"
-          )
-        );
+      if (!isMember) {
+        return res
+          .status(403)
+          .json(
+            errorResponse(
+              "Invalid Assignment",
+              "Cannot assign a task to a user who is not part of the project"
+            )
+          );
+      }
     }
 
     const updatedTask = await updateTaskService(projectId, taskId, {

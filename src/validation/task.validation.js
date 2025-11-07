@@ -45,7 +45,8 @@ export const updateTaskValidation = z.object({
     .string()
     .min(2, "title must be atleast 2 characters long")
     .max(155, "Title's length should not be greater than 155")
-    .trim(),
+    .trim()
+    .optional(),
 
   description: z
     .string()
@@ -60,9 +61,14 @@ export const updateTaskValidation = z.object({
         message: "Task priority must be one of 3 (low, medium or high)",
       }),
     })
-    .default("medium"),
+    .optional(),
 
-  assignedTo: z.uuid("Invalid uuid format").optional(),
+  assignedTo: z
+    .uuid("Invalid uuid format")
+    .optional()
+    .refine((val) => val === undefined || val.trim() !== "", {
+      message: "AssignedTo cannot be empty string",
+    }),
 
   dueDate: z
     .string()
