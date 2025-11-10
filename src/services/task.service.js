@@ -27,6 +27,15 @@ export const checkMemberService = async (projectId, userId) => {
   return !!member;
 };
 
+export const checkExistingTaskService = async (taskId) => {
+  const [task] = await db
+    .select()
+    .from(tasksTable)
+    .where(eq(tasksTable.id, taskId));
+
+  return task;
+};
+
 export const updateTaskService = async (projectId, taskId, updatedData) => {
   const { title, description, priority, assignedTo, dueDate } = updatedData;
   const [updatedTask] = await db

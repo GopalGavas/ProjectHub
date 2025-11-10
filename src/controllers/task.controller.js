@@ -4,6 +4,7 @@ import {
   roleBasedUpdateProjectService,
 } from "../services/project.service.js";
 import {
+  checkExistingTaskService,
   checkMemberService,
   createTaskService,
   getTaskByIdService,
@@ -17,6 +18,7 @@ import {
 } from "../validation/task.validation.js";
 import { z } from "zod";
 import { validate as isUUID } from "uuid";
+import { validateProjectAndTask } from "../utils/project.utils.js";
 
 export const createTaskController = async (req, res) => {
   try {
@@ -155,22 +157,23 @@ export const updateTaskController = async (req, res) => {
     const projectId = req.params.projectId;
     const taskId = req.params.taskId;
 
-    if (!isUUID(projectId)) {
+    if (!isUUID(projectId) || !isUUID(taskId)) {
       return res
         .status(400)
-        .json(errorResponse("Invalid Project Id", "Enter a valid Project Id"));
-    }
-
-    const project = await checkExistingProjectService(projectId);
-    if (!project) {
-      return res
-        .status(404)
         .json(
           errorResponse(
-            "Project not found",
-            `Project with provided id: ${projectId} does not exist`
+            `Invalid ${!isUUID(projectId) ? "Project" : "Task"} Id`,
+            `Enter a valid ${!isUUID(projectId) ? "Project" : "Task"} Id`
           )
         );
+    }
+
+    const validation = await validateProjectAndTask(projectId, taskId);
+
+    if (!validation.isValid) {
+      return res
+        .status(validation.status)
+        .json(errorResponse(validation.message, validation.details));
     }
 
     const { isOwner, isManager } = await roleBasedUpdateProjectService(
