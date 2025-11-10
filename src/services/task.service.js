@@ -75,3 +75,21 @@ export const getTaskByIdService = async (taskId) => {
 
   return task || null;
 };
+
+export const updateTaskStatusService = async (status, taskId) => {
+  const [updatedTask] = await db
+    .update(tasksTable)
+    .set({
+      status,
+    })
+    .where(eq(tasksTable.id, taskId))
+    .returning({
+      id: tasksTable.id,
+      title: tasksTable.title,
+      description: tasksTable.description,
+      priority: tasksTable.priority,
+      status: tasksTable.status,
+    });
+
+  return updatedTask;
+};

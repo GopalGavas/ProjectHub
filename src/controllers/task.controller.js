@@ -9,11 +9,13 @@ import {
   createTaskService,
   getTaskByIdService,
   updateTaskService,
+  updateTaskStatusService,
 } from "../services/task.service.js";
 import { errorResponse } from "../utils/error.js";
 import { successResponse } from "../utils/response.js";
 import {
   createTaskValidation,
+  updateTaskStatusValidation,
   updateTaskValidation,
 } from "../validation/task.validation.js";
 import { z } from "zod";
@@ -236,6 +238,86 @@ export const updateTaskController = async (req, res) => {
     return res
       .status(200)
       .json(successResponse("Tasks updated  Successfully", updatedTask));
+  } catch (error) {
+    console.error("Error in Create Task Controller: ", error);
+    return res.status(500).json(errorResponse("Internal Server Error"));
+  }
+};
+
+export const updateTaskStatusController = async (req, res) => {
+  try {
+    const validateData = await updateTaskStatusValidation.safeParseAsync(
+      req.body
+    );
+    if (!validateData.success) {
+      const formattedError = z.treeifyError(validateData.error);
+      return res
+        .status(400)
+        .json(errorResponse("Invalid Request", formattedError));
+    }
+
+    const { status } = validateData.data;
+    const projectId = req.params.projectId;
+    const taskId = req.params.taskId;
+
+    if (!isUUID(projectId) || !isUUID(taskId)) {
+      return res
+        .status(400)
+        .json(
+          errorResponse(
+            `Invalid ${!isUUID(projectId) ? "Project" : "Task"} Id`,
+            `Enter a valid ${!isUUID(projectId) ? "Project" : "Task"} Id`
+          )
+        );
+    }
+
+    const validation = await validateProjectAndTask(projectId, taskId);
+
+    if (!validation.isValid) {
+      return res
+        .status(validation.status)
+        .json(errorResponse(validation.message, validation.details));
+    }
+
+    const task = await checkExistingTaskService(taskId);
+
+    const { isOwner, isManager } = await roleBasedUpdateProjectService(
+      projectId,
+      req.user.id
+    );
+
+    if (!(isOwner || isManager || task.assignedTo !== req.user.id)) {
+      return res
+        .status(403)
+        .json(
+          errorResponse(
+            "Unauthorized Request",
+            "Only the user(s) assigned to tasks can update task-status"
+          )
+        );
+    }
+
+    if (task.status === status) {
+      return res
+        .status(400)
+        .json(errorResponse("Project already has that status"));
+    }
+
+    const updatedTask = await updateTaskStatusService(status, taskId);
+    if (!updatedTask) {
+      return res
+        .status(400)
+        .json(
+          errorResponse(
+            "Internal Server Error",
+            "Something went wrong while updating task status"
+          )
+        );
+    }
+
+    return res
+      .status(200)
+      .json(successResponse("Task Status Updated Successfully", updatedTask));
   } catch (error) {
     console.error("Error in Create Task Controller: ", error);
     return res.status(500).json(errorResponse("Internal Server Error"));

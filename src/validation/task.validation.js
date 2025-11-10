@@ -79,3 +79,9 @@ export const updateTaskValidation = z.object({
     .transform((val) => (val ? new Date(val) : null))
     .optional(),
 });
+
+export const updateTaskStatusValidation = z.object({
+  status: z.enum(["todo", "in-progress", "done"], {
+    errorMap: () => ({ message: "Status must be todo, in-progress, done" }),
+  }),
+});
