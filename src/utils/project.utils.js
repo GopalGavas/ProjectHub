@@ -43,12 +43,12 @@ export const validateProjectAndTask = async (projectId, taskId) => {
     };
   }
 
-  if (!task.isActive) {
+  if (task.isDeleted) {
     return {
       isValid: false,
       status: 400,
       message: "Invalid Request",
-      details: "The task you're trying to update is inactive",
+      details: "The task you're trying to update is deleted",
     };
   }
 

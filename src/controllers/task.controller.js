@@ -8,6 +8,7 @@ import {
   checkMemberService,
   createTaskService,
   getTaskByIdService,
+  softDeleteTaskService,
   updateTaskService,
   updateTaskStatusService,
 } from "../services/task.service.js";
@@ -320,6 +321,66 @@ export const updateTaskStatusController = async (req, res) => {
       .json(successResponse("Task Status Updated Successfully", updatedTask));
   } catch (error) {
     console.error("Error in Create Task Controller: ", error);
+    return res.status(500).json(errorResponse("Internal Server Error"));
+  }
+};
+
+export const softDeleteTaskController = async (req, res) => {
+  try {
+    const { projectId, taskId } = req.params;
+
+    if (!isUUID(projectId) || !isUUID(taskId)) {
+      return res
+        .status(400)
+        .json(
+          errorResponse(
+            `Invalid ${!isUUID(projectId) ? "Project" : "Task"} Id`,
+            `Enter a valid ${!isUUID(projectId) ? "Project" : "Task"} Id`
+          )
+        );
+    }
+
+    const validation = await validateProjectAndTask(projectId, taskId);
+
+    if (!validation.isValid) {
+      return res
+        .status(validation.status)
+        .json(errorResponse(validation.message, validation.details));
+    }
+
+    const { isOwner, isManager } = await roleBasedUpdateProjectService(
+      projectId,
+      req.user.id
+    );
+
+    if (!isOwner && !isManager) {
+      return res
+        .status(403)
+        .json(
+          errorResponse(
+            "Unauthorized Action",
+            "Only project owners and managers can delete a task"
+          )
+        );
+    }
+
+    const softDeletedTask = await softDeleteTaskService(taskId);
+    if (!softDeletedTask) {
+      return res
+        .status(400)
+        .json(
+          errorResponse(
+            "Internal Server Error",
+            "Something went wrong while deleting task"
+          )
+        );
+    }
+
+    return res
+      .status(200)
+      .json(successResponse("Task deleted Successfully", softDeletedTask));
+  } catch (error) {
+    console.error("Error in Soft Delete Task Controller: ", error);
     return res.status(500).json(errorResponse("Internal Server Error"));
   }
 };

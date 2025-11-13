@@ -93,3 +93,20 @@ export const updateTaskStatusService = async (status, taskId) => {
 
   return updatedTask;
 };
+
+export const softDeleteTaskService = async (taskId) => {
+  const [task] = await db
+    .update(tasksTable)
+    .set({
+      isDeleted: true,
+    })
+    .where(eq(tasksTable.id, taskId))
+    .returning({
+      id: tasksTable.id,
+      title: tasksTable.title,
+      description: tasksTable.description,
+      isDeleted: tasksTable.isDeleted,
+    });
+
+  return task;
+};
