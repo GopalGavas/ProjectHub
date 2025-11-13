@@ -19,7 +19,11 @@ export const checkProjectIsActive = (
   return null;
 };
 
-export const validateProjectAndTask = async (projectId, taskId) => {
+export const validateProjectAndTask = async (
+  projectId,
+  taskId,
+  { allowedDeleted = false } = {}
+) => {
   const [project, task] = await Promise.all([
     checkExistingProjectService(projectId),
     checkExistingTaskService(taskId),
@@ -43,7 +47,7 @@ export const validateProjectAndTask = async (projectId, taskId) => {
     };
   }
 
-  if (task.isDeleted) {
+  if (task.isDeleted && !allowedDeleted) {
     return {
       isValid: false,
       status: 400,
