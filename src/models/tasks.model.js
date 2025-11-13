@@ -36,7 +36,7 @@ export const tasksTable = pgTable(
     priority: taskPriorityEnum("priority").default("medium").notNull(),
     assignedTo: uuid("assigned_to").references(() => usersTable.id),
     dueDate: timestamp("due_date"),
-    isActive: boolean("is_Active").default(true),
+    isDeleted: boolean("is_deleted").default(false),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
