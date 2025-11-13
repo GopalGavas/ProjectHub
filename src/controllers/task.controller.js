@@ -7,6 +7,7 @@ import {
   checkExistingTaskService,
   checkMemberService,
   createTaskService,
+  deleteTaskService,
   getTaskByIdService,
   restoreTaskService,
   softDeleteTaskService,
@@ -444,6 +445,65 @@ export const restoreTaskController = async (req, res) => {
       .json(successResponse("Task Restored Successfully", restoredTask));
   } catch (error) {
     console.error("Error in Restore Task Controller: ", error);
+    return res.status(500).json(errorResponse("Internal Server Error"));
+  }
+};
+
+export const deleteTaskController = async (req, res) => {
+  try {
+    const { projectId, taskId } = req.params;
+
+    if (!isUUID(projectId) || !isUUID(taskId)) {
+      return res
+        .status(400)
+        .json(
+          errorResponse(
+            `Invalid ${!isUUID(projectId) ? "Project" : "Task"} Id`,
+            `Enter a valid ${!isUUID(projectId) ? "Project" : "Task"} Id`
+          )
+        );
+    }
+
+    const validation = await validateProjectAndTask(projectId, taskId, {
+      allowedDeleted: true,
+    });
+
+    if (!validation.isValid) {
+      return res
+        .status(validation.status)
+        .json(errorResponse(validation.message, validation.details));
+    }
+
+    const project = await checkExistingProjectService(projectId);
+    if (req.user.id !== project.ownerId) {
+      return res
+        .status(403)
+        .json(
+          errorResponse(
+            "Unauthorized Request",
+            "Only project owners can permanently delete tasks"
+          )
+        );
+    }
+
+    const task = await checkExistingTaskService(taskId);
+
+    if (!task.isDeleted) {
+      return res
+        .status(400)
+        .json(
+          errorResponse(
+            "Invalid Request",
+            "Task must be soft deleted before permanent deletion"
+          )
+        );
+    }
+
+    await deleteTaskService(taskId);
+
+    return res.status(200).json(successResponse("Task Permanently Deleted!"));
+  } catch (error) {
+    console.error("Error in Delete Task Controller: ", error);
     return res.status(500).json(errorResponse("Internal Server Error"));
   }
 };

@@ -127,3 +127,7 @@ export const restoreTaskService = async (taskId) => {
 
   return task;
 };
+
+export const deleteTaskService = async (taskId) => {
+  await db.delete(tasksTable).where(eq(tasksTable.id, taskId));
+};
