@@ -2,8 +2,9 @@ import { db } from "../db/index.js";
 import { projectMembersTable } from "../models/project-members.model.js";
 import { projectsTable } from "../models/projects.model.js";
 import { tasksTable } from "../models/tasks.model.js";
-import { and, eq } from "drizzle-orm";
+import { and, eq, or, ilike, desc, asc, sql } from "drizzle-orm";
 import { usersTable } from "../models/user.model.js";
+import { validate as isUUID } from "uuid";
 
 export const createTaskService = async (taskData) => {
   const [task] = await db.insert(tasksTable).values(taskData).returning();
@@ -130,4 +131,52 @@ export const restoreTaskService = async (taskId) => {
 
 export const deleteTaskService = async (taskId) => {
   await db.delete(tasksTable).where(eq(tasksTable.id, taskId));
+};
+
+export const getAllTasksService = async (projectId, offset, limit, filters) => {
+  const { status, priority, assignee, search, sortBy, order } = filters;
+
+  const conditions = [
+    eq(tasksTable.projectId, projectId),
+    eq(tasksTable.isDeleted, false),
+  ];
+
+  if (status) {
+    conditions.push(eq(tasksTable.status, status));
+  }
+
+  if (priority) {
+    conditions.push(eq(tasksTable.priority, priority));
+  }
+
+  if (assignee && isUUID(assignee))
+    conditions.push(eq(tasksTable.assignedTo, assignee));
+
+  if (search) {
+    conditions.push(
+      or(
+        ilike(tasksTable.title, `%${search}%`),
+        ilike(tasksTable.description, `%${search}%`)
+      )
+    );
+  }
+
+  const tasks = await db
+    .select()
+    .from(tasksTable)
+    .where(and(...conditions))
+    .orderBy(
+      order === "asc" ? asc(tasksTable[sortBy]) : desc(tasksTable[sortBy])
+    )
+    .offset(offset)
+    .limit(limit);
+
+  const countTasks = await db
+    .select({ count: sql`COUNT(*)` })
+    .from(tasksTable)
+    .where(and(...conditions));
+
+  const totalCount = countTasks[0]?.count || 0;
+
+  return { tasks, totalCount };
 };

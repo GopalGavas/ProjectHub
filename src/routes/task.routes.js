@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createTaskController,
   deleteTaskController,
+  getAllTasksController,
   getTaskByIdController,
   restoreTaskController,
   softDeleteTaskController,
@@ -12,6 +13,7 @@ import {
 const taskRouter = Router({ mergeParams: true });
 
 taskRouter.post("/", createTaskController);
+taskRouter.get("/", getAllTasksController);
 taskRouter.get("/:taskId", getTaskByIdController);
 taskRouter.put("/:taskId", updateTaskController);
 taskRouter.put("/:taskId/status", updateTaskStatusController);

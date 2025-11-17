@@ -8,6 +8,7 @@ import {
   checkMemberService,
   createTaskService,
   deleteTaskService,
+  getAllTasksService,
   getTaskByIdService,
   restoreTaskService,
   softDeleteTaskService,
@@ -504,6 +505,92 @@ export const deleteTaskController = async (req, res) => {
     return res.status(200).json(successResponse("Task Permanently Deleted!"));
   } catch (error) {
     console.error("Error in Delete Task Controller: ", error);
+    return res.status(500).json(errorResponse("Internal Server Error"));
+  }
+};
+
+export const getAllTasksController = async (req, res) => {
+  try {
+    const projectId = req.params.projectId;
+    const {
+      status,
+      priority,
+      assignee,
+      search,
+      sortBy = "createdAt",
+      order = "desc",
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    if (!isUUID(projectId)) {
+      return res
+        .status(400)
+        .json(errorResponse("Invalid Project Id", "Enter a valid Project Id"));
+    }
+
+    const project = await checkExistingProjectService(projectId);
+
+    if (!project) {
+      return res
+        .status(404)
+        .json(
+          errorResponse(
+            "Project not found",
+            `Project with provided id:${projectId} does not exist`
+          )
+        );
+    }
+
+    const { isOwner, isManager } = await roleBasedUpdateProjectService(
+      projectId,
+      req.user.id
+    );
+
+    if (!isOwner && !isManager) {
+      return res
+        .status(403)
+        .json(
+          errorResponse(
+            "Unauthorized Action",
+            "Only Project Owners and Managers can view all tasks"
+          )
+        );
+    }
+
+    const pageInt = parseInt(page);
+    const limitInt = parseInt(limit);
+    const offset = (pageInt - 1) * limitInt;
+
+    const filters = {
+      status,
+      priority,
+      assignee,
+      search,
+      sortBy,
+      order,
+    };
+
+    const { tasks, totalCount } = await getAllTasksService(
+      projectId,
+      offset,
+      limitInt,
+      filters
+    );
+
+    return res.status(200).json(
+      successResponse("Tasks fetched Successfully", {
+        tasks,
+        pagination: {
+          totalCount,
+          page: pageInt,
+          limit: limitInt,
+          totalPages: Math.ceil(totalCount / limitInt),
+        },
+      })
+    );
+  } catch (error) {
+    console.error("Error in Get All Tasks Controller: ", error);
     return res.status(500).json(errorResponse("Internal Server Error"));
   }
 };
