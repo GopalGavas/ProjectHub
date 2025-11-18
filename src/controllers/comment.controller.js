@@ -9,7 +9,9 @@ import {
 import {
   checkExistingCommentService,
   createCommentService,
+  getCommentsByTaskService,
 } from "../services/comments.service.js";
+import { buildCommentTree } from "../utils/commentTree.js";
 
 export const createCommentController = async (req, res) => {
   try {
@@ -71,6 +73,44 @@ export const createCommentController = async (req, res) => {
       .json(successResponse("Comment Created Successfully", taskComment));
   } catch (error) {
     console.error("Error in createCommentController:", error);
+    return res
+      .status(500)
+      .json(errorResponse(500, "Internal Server Error", error.message));
+  }
+};
+
+export const getCommentsByTaskController = async (req, res) => {
+  try {
+    const { projectId, taskId } = req.params;
+
+    const task = await checkExistingTaskService(taskId);
+
+    if (!task) {
+      return res
+        .status(404)
+        .json(
+          errorResponse("Task not found", "Task with given Id does not exists")
+        );
+    }
+
+    const isMember = await checkMemberService(projectId, req.user.id);
+    if (!isMember) {
+      return res
+        .status(403)
+        .json(
+          errorResponse("Forbidden", "You are not a member of this project")
+        );
+    }
+
+    const comments = await getCommentsByTaskService(taskId);
+
+    const threadedComments = buildCommentTree(comments);
+
+    return res
+      .status(200)
+      .json(successResponse("Comments fetched successfully", threadedComments));
+  } catch (error) {
+    console.error("Error in getCommentsByTaskController:", error);
     return res
       .status(500)
       .json(errorResponse(500, "Internal Server Error", error.message));

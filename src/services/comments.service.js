@@ -1,6 +1,7 @@
 import { commentsTable } from "../models/comments.model.js";
 import { db } from "../db/index.js";
 import { eq } from "drizzle-orm";
+import { usersTable } from "../models/user.model.js";
 
 export const createCommentService = async ({
   content,
@@ -31,4 +32,28 @@ export const checkExistingCommentService = async (commentId) => {
     .where(eq(commentsTable.id, commentId));
 
   return comment;
+};
+
+export const getCommentsByTaskService = async (taskId) => {
+  const comments = await db
+    .select({
+      id: commentsTable.id,
+      content: commentsTable.content,
+      parentId: commentsTable.parentId,
+      authorId: commentsTable.authorId,
+      taskId: commentsTable.taskId,
+      createdAt: commentsTable.createdAt,
+      updatedAt: commentsTable.updatedAt,
+      isDeleted: commentsTable.isDeleted,
+      author: {
+        id: usersTable.id,
+        name: usersTable.name,
+        email: usersTable.email,
+      },
+    })
+    .from(commentsTable)
+    .leftJoin(usersTable, eq(commentsTable.authorId, usersTable.id))
+    .where(eq(commentsTable.taskId, taskId));
+
+  return comments;
 };
