@@ -1,10 +1,12 @@
 import { successResponse } from "../utils/response.js";
 import { errorResponse } from "../utils/error.js";
-import { createCommentSchema } from "../validation/comment.validation";
+import { createCommentSchema } from "../validation/comment.validation.js";
 import { z } from "zod";
-import { checkExistingTaskService } from "../services/task.service.js";
+import {
+  checkExistingTaskService,
+  checkMemberService,
+} from "../services/task.service.js";
 import { createCommentService } from "../services/comments.service.js";
-import { checkAddedMembersService } from "../services/project.service.js";
 
 export const createCommentController = async (req, res) => {
   try {
@@ -29,7 +31,7 @@ export const createCommentController = async (req, res) => {
         );
     }
 
-    const isMember = await checkAddedMembersService(projectId, req.user.id);
+    const isMember = await checkMemberService(projectId, req.user.id);
 
     if (!isMember) {
       return res
@@ -48,7 +50,7 @@ export const createCommentController = async (req, res) => {
 
     return res
       .status(201)
-      .json(successResponse(201, "Comment Created Successfully", taskComment));
+      .json(successResponse("Comment Created Successfully", taskComment));
   } catch (error) {
     console.error("Error in createCommentController:", error);
     return res

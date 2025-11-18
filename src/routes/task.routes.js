@@ -9,6 +9,7 @@ import {
   updateTaskController,
   updateTaskStatusController,
 } from "../controllers/task.controller.js";
+import commentRouter from "./comment.routes.js";
 
 const taskRouter = Router({ mergeParams: true });
 
@@ -20,5 +21,7 @@ taskRouter.put("/:taskId/status", updateTaskStatusController);
 taskRouter.put("/:taskId/delete", softDeleteTaskController);
 taskRouter.put("/:taskId/restore", restoreTaskController);
 taskRouter.delete("/:taskId", deleteTaskController);
+
+taskRouter.use("/:taskId/comments", commentRouter);
 
 export default taskRouter;
