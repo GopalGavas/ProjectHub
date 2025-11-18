@@ -1,5 +1,6 @@
 import { commentsTable } from "../models/comments.model.js";
 import { db } from "../db/index.js";
+import { eq } from "drizzle-orm";
 
 export const createCommentService = async ({
   content,
@@ -19,6 +20,15 @@ export const createCommentService = async ({
       createdAt: commentsTable.createdAt,
       updatedAt: commentsTable.updatedAt,
     });
+
+  return comment;
+};
+
+export const checkExistingCommentService = async (commentId) => {
+  const [comment] = await db
+    .select()
+    .from(commentsTable)
+    .where(eq(commentsTable.id, commentId));
 
   return comment;
 };

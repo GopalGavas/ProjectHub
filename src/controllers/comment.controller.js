@@ -6,7 +6,10 @@ import {
   checkExistingTaskService,
   checkMemberService,
 } from "../services/task.service.js";
-import { createCommentService } from "../services/comments.service.js";
+import {
+  checkExistingCommentService,
+  createCommentService,
+} from "../services/comments.service.js";
 
 export const createCommentController = async (req, res) => {
   try {
@@ -39,6 +42,21 @@ export const createCommentController = async (req, res) => {
         .json(
           errorResponse("Forbidden", "You are not a member of this project")
         );
+    }
+
+    if (parentId) {
+      const parentCommment = await checkExistingCommentService(parentId);
+
+      if (!parentCommment) {
+        return res
+          .status(404)
+          .json(
+            errorResponse(
+              "Parent Comment not found",
+              "Parent Comment with given Id does not exists"
+            )
+          );
+      }
     }
 
     const taskComment = await createCommentService({
