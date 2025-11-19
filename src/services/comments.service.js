@@ -57,3 +57,22 @@ export const getCommentsByTaskService = async (taskId) => {
 
   return comments;
 };
+
+export const updateCommentService = async (commentId, content) => {
+  const [updatedComment] = await db
+    .update(commentsTable)
+    .set({
+      content,
+    })
+    .where(eq(commentsTable.id, commentId))
+    .returning({
+      id: commentsTable.id,
+      content: commentsTable.content,
+      parentId: commentsTable.parentId,
+      authorId: commentsTable.authorId,
+      createdAt: commentsTable.createdAt,
+      updatedAt: commentsTable.updatedAt,
+    });
+
+  return updatedComment;
+};

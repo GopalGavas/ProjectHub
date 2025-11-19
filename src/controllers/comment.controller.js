@@ -1,6 +1,9 @@
 import { successResponse } from "../utils/response.js";
 import { errorResponse } from "../utils/error.js";
-import { createCommentSchema } from "../validation/comment.validation.js";
+import {
+  createCommentSchema,
+  updateCommentSchema,
+} from "../validation/comment.validation.js";
 import { z } from "zod";
 import {
   checkExistingTaskService,
@@ -10,6 +13,7 @@ import {
   checkExistingCommentService,
   createCommentService,
   getCommentsByTaskService,
+  updateCommentService,
 } from "../services/comments.service.js";
 import { buildCommentTree } from "../utils/commentTree.js";
 
@@ -111,6 +115,49 @@ export const getCommentsByTaskController = async (req, res) => {
       .json(successResponse("Comments fetched successfully", threadedComments));
   } catch (error) {
     console.error("Error in getCommentsByTaskController:", error);
+    return res
+      .status(500)
+      .json(errorResponse(500, "Internal Server Error", error.message));
+  }
+};
+
+export const updateCommentController = async (req, res) => {
+  try {
+    const validateData = await updateCommentSchema.safeParseAsync(req.body);
+    if (!validateData.success) {
+      const formattedErrors = z.treeifyError(validateData.error);
+      return res
+        .status(400)
+        .json(errorResponse("Validation Error", formattedErrors));
+    }
+    const { content } = validateData.data;
+    const { commentId } = req.params;
+
+    const existingComment = await checkExistingCommentService(commentId);
+    if (!existingComment) {
+      return res
+        .status(404)
+        .json(
+          errorResponse(
+            "Comment not found",
+            "Comment with given Id does not exists"
+          )
+        );
+    }
+
+    if (existingComment.authorId !== req.user.id) {
+      return res
+        .status(403)
+        .json(errorResponse("Forbidden", "You are not the author of comment"));
+    }
+
+    const updatedComment = await updateCommentService(commentId, content);
+
+    return res
+      .status(200)
+      .json(successResponse("Comment updated successfully", updatedComment));
+  } catch (error) {
+    console.error("Error in updateCommentController:", error);
     return res
       .status(500)
       .json(errorResponse(500, "Internal Server Error", error.message));
