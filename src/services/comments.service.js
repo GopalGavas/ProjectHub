@@ -76,3 +76,23 @@ export const updateCommentService = async (commentId, content) => {
 
   return updatedComment;
 };
+
+export const softDeleteCommentService = async (commentId) => {
+  const [deletedComment] = await db
+    .update(commentsTable)
+    .set({
+      isDeleted: true,
+    })
+    .where(eq(commentsTable.id, commentId))
+    .returning({
+      id: commentsTable.id,
+      content: commentsTable.content,
+      parentId: commentsTable.parentId,
+      authorId: commentsTable.authorId,
+      createdAt: commentsTable.createdAt,
+      updatedAt: commentsTable.updatedAt,
+      isDeleted: commentsTable.isDeleted,
+    });
+
+  return deletedComment;
+};

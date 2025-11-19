@@ -13,9 +13,11 @@ import {
   checkExistingCommentService,
   createCommentService,
   getCommentsByTaskService,
+  softDeleteCommentService,
   updateCommentService,
 } from "../services/comments.service.js";
 import { buildCommentTree } from "../utils/commentTree.js";
+import { validate as isUUID } from "uuid";
 
 export const createCommentController = async (req, res) => {
   try {
@@ -158,6 +160,53 @@ export const updateCommentController = async (req, res) => {
       .json(successResponse("Comment updated successfully", updatedComment));
   } catch (error) {
     console.error("Error in updateCommentController:", error);
+    return res
+      .status(500)
+      .json(errorResponse(500, "Internal Server Error", error.message));
+  }
+};
+
+export const softDeleteCommentController = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+
+    if (!commentId || !isUUID(commentId)) {
+      return res
+        .status(400)
+        .json(errorResponse("Validation Error", "Invalid commentId"));
+    }
+
+    const existingComment = await checkExistingCommentService(commentId);
+    if (!existingComment) {
+      return res
+        .status(404)
+        .json(
+          errorResponse(
+            "Comment not found",
+            "Comment with given Id does not exists"
+          )
+        );
+    }
+
+    if (existingComment.authorId !== req.user.id) {
+      return res
+        .status(403)
+        .json(errorResponse("Forbidden", "You are not the author of comment"));
+    }
+
+    if (existingComment.isDeleted) {
+      return res
+        .status(400)
+        .json(errorResponse("Bad Request", "Comment is already deleted"));
+    }
+
+    const deletedComment = await softDeleteCommentService(commentId);
+
+    return res
+      .status(200)
+      .json(successResponse("Comment deleted successfully", deletedComment));
+  } catch (error) {
+    console.error("Error in softDeleteCommentController:", error);
     return res
       .status(500)
       .json(errorResponse(500, "Internal Server Error", error.message));
