@@ -1,6 +1,6 @@
 import { commentsTable } from "../models/comments.model.js";
 import { db } from "../db/index.js";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { usersTable } from "../models/user.model.js";
 
 export const createCommentService = async ({
@@ -53,7 +53,9 @@ export const getCommentsByTaskService = async (taskId) => {
     })
     .from(commentsTable)
     .leftJoin(usersTable, eq(commentsTable.authorId, usersTable.id))
-    .where(eq(commentsTable.taskId, taskId));
+    .where(
+      and(eq(commentsTable.taskId, taskId), eq(commentsTable.isDeleted, false))
+    );
 
   return comments;
 };
@@ -95,4 +97,37 @@ export const softDeleteCommentService = async (commentId) => {
     });
 
   return deletedComment;
+};
+
+export const softDeleteCommentThreadService = async (commentId) => {
+  const allComments = await db.select().from(commentsTable);
+
+  const map = new Map();
+
+  allComments.forEach((comment) => {
+    const parent = comment.parentId || "root";
+    if (!map.has(parent)) map.set(parent, []);
+    map.get(parent).push(comment);
+  });
+
+  const idsToDelete = [];
+
+  const collectIds = (parentId) => {
+    idsToDelete.push(parentId);
+    const children = map.get(parentId) || [];
+    if (children) {
+      children.forEach((child) => collectIds(child.id));
+    }
+  };
+
+  collectIds(commentId);
+
+  await db
+    .update(commentsTable)
+    .set({
+      isDeleted: true,
+    })
+    .where(inArray(commentsTable.id, idsToDelete));
+
+  return { deletedId: idsToDelete };
 };

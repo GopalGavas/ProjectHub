@@ -14,6 +14,7 @@ import {
   createCommentService,
   getCommentsByTaskService,
   softDeleteCommentService,
+  softDeleteCommentThreadService,
   updateCommentService,
 } from "../services/comments.service.js";
 import { buildCommentTree } from "../utils/commentTree.js";
@@ -200,11 +201,16 @@ export const softDeleteCommentController = async (req, res) => {
         .json(errorResponse("Bad Request", "Comment is already deleted"));
     }
 
-    const deletedComment = await softDeleteCommentService(commentId);
+    let result;
+    if (existingComment.parentId === null) {
+      result = await softDeleteCommentThreadService(commentId);
+    } else {
+      result = await softDeleteCommentService(commentId);
+    }
 
     return res
       .status(200)
-      .json(successResponse("Comment deleted successfully", deletedComment));
+      .json(successResponse("Comment deleted successfully", result));
   } catch (error) {
     console.error("Error in softDeleteCommentController:", error);
     return res
