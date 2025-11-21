@@ -1,6 +1,7 @@
 import { commentLikesTable } from "../models/likes.model.js";
 import { db } from "../db/index.js";
 import { and, eq } from "drizzle-orm";
+import { commentReactionsTable } from "../models/reactions.model.js";
 
 export const toggleCommentLikeService = async (commentId, userId) => {
   const existingLike = await db
@@ -20,7 +21,6 @@ export const toggleCommentLikeService = async (commentId, userId) => {
 
     return { liked: false };
   } else {
-    // Like the comment
     const [likedComment] = await db
       .insert(commentLikesTable)
       .values({
@@ -31,4 +31,40 @@ export const toggleCommentLikeService = async (commentId, userId) => {
 
     return { liked: true, likedComment };
   }
+};
+
+export const addReactionToCommentService = async (commentId, userId, emoji) => {
+  const existingReaction = await db
+    .select()
+    .from(commentReactionsTable)
+    .where(
+      and(
+        eq(commentReactionsTable.commentId, commentId),
+        eq(commentReactionsTable.userId, userId)
+      )
+    );
+
+  if (existingReaction.length === 0) {
+    const [newReaction] = await db
+      .insert(commentReactionsTable)
+      .values({ commentId, userId, emoji })
+      .returning();
+
+    return { action: "added", reaction: newReaction };
+  }
+
+  if (existingReaction[0].emoji === emoji) {
+    await db
+      .delete(commentReactionsTable)
+      .where(eq(commentReactionsTable.id, existingReaction[0].id));
+
+    return { action: "removed" };
+  }
+
+  const [updatedReaction] = await db
+    .update(commentReactionsTable)
+    .set({ emoji })
+    .where(eq(commentReactionsTable.id, existingReaction[0].id))
+    .returning();
+  return { action: "updated", reaction: updatedReaction };
 };

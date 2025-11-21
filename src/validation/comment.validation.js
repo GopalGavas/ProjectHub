@@ -8,3 +8,7 @@ export const createCommentSchema = z.object({
 export const updateCommentSchema = z.object({
   content: z.string().trim().min(1, "Content cannot be empty"),
 });
+
+export const addReactionSchema = z.object({
+  emoji: z.string().trim().min(1, "Emoji cannot be empty"),
+});

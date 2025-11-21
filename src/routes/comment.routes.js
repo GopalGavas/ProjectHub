@@ -5,7 +5,10 @@ import {
   softDeleteCommentController,
   updateCommentController,
 } from "../controllers/comment.controller.js";
-import { toggleCommentLikeController } from "../controllers/like.controller.js";
+import {
+  addReactionToCommentController,
+  toggleCommentLikeController,
+} from "../controllers/like.controller.js";
 
 const commentRouter = Router({ mergeParams: true });
 
@@ -14,5 +17,6 @@ commentRouter.get("/", getCommentsByTaskController);
 commentRouter.put("/:commentId", updateCommentController);
 commentRouter.put("/:commentId/delete", softDeleteCommentController);
 commentRouter.post("/:commentId/like", toggleCommentLikeController);
+commentRouter.post("/:commentId/reaction", addReactionToCommentController);
 
 export default commentRouter;
