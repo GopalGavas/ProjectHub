@@ -82,7 +82,7 @@ export const createCommentController = async (req, res) => {
     console.error("Error in createCommentController:", error);
     return res
       .status(500)
-      .json(errorResponse(500, "Internal Server Error", error.message));
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -120,7 +120,7 @@ export const getCommentsByTaskController = async (req, res) => {
     console.error("Error in getCommentsByTaskController:", error);
     return res
       .status(500)
-      .json(errorResponse(500, "Internal Server Error", error.message));
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -163,7 +163,7 @@ export const updateCommentController = async (req, res) => {
     console.error("Error in updateCommentController:", error);
     return res
       .status(500)
-      .json(errorResponse(500, "Internal Server Error", error.message));
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -215,6 +215,6 @@ export const softDeleteCommentController = async (req, res) => {
     console.error("Error in softDeleteCommentController:", error);
     return res
       .status(500)
-      .json(errorResponse(500, "Internal Server Error", error.message));
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };

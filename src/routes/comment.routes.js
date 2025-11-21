@@ -5,6 +5,7 @@ import {
   softDeleteCommentController,
   updateCommentController,
 } from "../controllers/comment.controller.js";
+import { toggleCommentLikeController } from "../controllers/like.controller.js";
 
 const commentRouter = Router({ mergeParams: true });
 
@@ -12,5 +13,6 @@ commentRouter.post("/", createCommentController);
 commentRouter.get("/", getCommentsByTaskController);
 commentRouter.put("/:commentId", updateCommentController);
 commentRouter.put("/:commentId/delete", softDeleteCommentController);
+commentRouter.post("/:commentId/like", toggleCommentLikeController);
 
 export default commentRouter;
