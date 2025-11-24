@@ -7,6 +7,7 @@ import {
 } from "../controllers/comment.controller.js";
 import {
   addReactionToCommentController,
+  getCommentReactionSummaryController,
   toggleCommentLikeController,
 } from "../controllers/like.controller.js";
 
@@ -18,5 +19,6 @@ commentRouter.put("/:commentId", updateCommentController);
 commentRouter.put("/:commentId/delete", softDeleteCommentController);
 commentRouter.post("/:commentId/like", toggleCommentLikeController);
 commentRouter.post("/:commentId/reaction", addReactionToCommentController);
+commentRouter.get("/:commentId/summary", getCommentReactionSummaryController);
 
 export default commentRouter;

@@ -1,7 +1,9 @@
 import { commentsTable } from "../models/comments.model.js";
 import { db } from "../db/index.js";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { usersTable } from "../models/user.model.js";
+import { commentLikesTable } from "../models/likes.model.js";
+import { commentReactionsTable } from "../models/reactions.model.js";
 
 export const createCommentService = async ({
   content,
@@ -130,4 +132,27 @@ export const softDeleteCommentThreadService = async (commentId) => {
     .where(inArray(commentsTable.id, idsToDelete));
 
   return { deletedId: idsToDelete };
+};
+
+export const getCommentReactionSummaryService = async (commentId, userId) => {
+  const likeCount = await db
+    .select({ count: sql`COUNT(*)` })
+    .from(commentLikesTable)
+    .where(eq(commentLikesTable.commentId, commentId))
+    .then((r) => r[0]?.count || 0);
+
+  const reactions = await db
+    .select({
+      emoji: commentReactionsTable.emoji,
+      count: sql`COUNT(*)`,
+      reactedByUser: sql`bool_or(${commentReactionsTable.userId} = ${userId})`,
+    })
+    .from(commentReactionsTable)
+    .where(eq(commentReactionsTable.commentId, commentId))
+    .groupBy(commentReactionsTable.emoji);
+
+  return {
+    likes: likeCount,
+    reactions,
+  };
 };
