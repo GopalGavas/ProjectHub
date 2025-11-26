@@ -1,6 +1,6 @@
 import { jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-export const activity = pgTable("activities", {
+export const activityTable = pgTable("activities", {
   id: uuid().primaryKey().defaultRandom(),
 
   projectId: uuid("project_id").notNull(),

@@ -26,6 +26,7 @@ import {
 import { validate as isUUID } from "uuid";
 import { db } from "../db/index.js";
 import { checkProjectIsActive } from "../utils/project.utils.js";
+import { logActivity } from "../services/activity.service.js";
 
 export const createProjectController = async (req, res) => {
   try {
@@ -77,6 +78,32 @@ export const createProjectController = async (req, res) => {
       await addProjectMembersService(newProject.id, allMembers, tx);
       return newProject;
     });
+
+    // "ACTIVITY LOG"
+    await logActivity({
+      projectId: project.id,
+      actorId: ownerId,
+      action: "project_created",
+      metadata: {
+        name: projectName,
+        description: projectDescription,
+      },
+    });
+
+    for (const member of allMembers) {
+      if (member.userId === ownerId) continue;
+
+      await logActivity({
+        projectId: project.id,
+        actorId: ownerId,
+        action: "members_added_to_project",
+        metadata: {
+          projectName: projectName,
+          memberId: member.userId,
+          memberRole: member.role,
+        },
+      });
+    }
 
     return res.status(201).json(
       successResponse("Project created Successfully", {
@@ -215,6 +242,37 @@ export const updateProjectController = async (req, res) => {
       projectDescription
     );
 
+    const changes = {};
+
+    // Check if project name changed
+    if (projectName && projectName !== existing.projectName) {
+      changes.projectName = {
+        old: existing.projectName,
+        new: updatedProject.projectName,
+      };
+    }
+
+    // Check if project description changed
+    if (
+      projectDescription &&
+      projectDescription !== existing.projectDescription
+    ) {
+      changes.projectDescription = {
+        old: existing.projectDescription,
+        new: updatedProject.projectDescription,
+      };
+    }
+
+    // Only log if at least one field changed
+    if (Object.keys(changes).length > 0) {
+      await logActivity({
+        projectId,
+        actorId: req.user.id,
+        action: "project_details_updated",
+        metadata: { changes },
+      });
+    }
+
     return res
       .status(200)
       .json(successResponse("Project Updated Successfully", updatedProject));
@@ -305,6 +363,19 @@ export const addMembersToProjectController = async (req, res) => {
       return await addProjectMembersService(projectId, members, tx);
     });
 
+    for (const member of addedMembers) {
+      await logActivity({
+        projectId,
+        actorId: existingProject.ownerId,
+        action: "members_added_to_project",
+        metadata: {
+          projectName: existingProject.projectName,
+          memberId: member.userId,
+          memberRole: member.role,
+        },
+      });
+    }
+
     return res.status(201).json(
       successResponse("New members added successfully", {
         count: addedMembers.length || 0,
@@ -351,7 +422,10 @@ export const removeMembersFromProjectController = async (req, res) => {
         );
     }
 
-    const ensureActive = checkProjectIsActive(existing, "remove members");
+    const ensureActive = checkProjectIsActive(
+      existingProject,
+      "remove members"
+    );
     if (ensureActive) {
       return res.status(ensureActive.status).json(ensureActive.response);
     }
@@ -399,6 +473,19 @@ export const removeMembersFromProjectController = async (req, res) => {
     const removedMembers = await db.transaction(async (tx) => {
       return await removeProjectMemberService(projectId, members, tx);
     });
+
+    for (const member of removedMembersDetails) {
+      await logActivity({
+        projectId,
+        actorId: existingProject.ownerId,
+        action: "members_removed_from_project",
+        metadata: {
+          projectName: existingProject.projectName,
+          memberId: member.id,
+          memberEmail: member.email,
+        },
+      });
+    }
 
     return res.status(200).json(
       successResponse("Members removed successfully", {
@@ -451,6 +538,15 @@ export const softDeleteProjectController = async (req, res) => {
         .json(errorResponse("Failed to deactivate the project"));
     }
 
+    await logActivity({
+      projectId,
+      actorId: req.user.id,
+      action: "project_deactivated",
+      metadata: {
+        projectName: project.projectName,
+      },
+    });
+
     return res.status(200).json(
       successResponse("Project Deactivated!", {
         id: result.id,
@@ -500,6 +596,15 @@ export const restoreProjectController = async (req, res) => {
         .status(500)
         .json(errorResponse("Failed to restore the project"));
     }
+
+    await logActivity({
+      projectId,
+      actorId: req.user.id,
+      action: "project_restored",
+      metadata: {
+        projectName: project.projectName,
+      },
+    });
 
     return res.status(200).json(
       successResponse("Project Restored Successfully!", {
@@ -557,6 +662,16 @@ export const hardDeleteProjectController = async (req, res) => {
     }
 
     await deleteProjectService(projectId);
+
+    await logActivity({
+      projectId,
+      actorId: req.user.id,
+      action: "project_deleted_permanently",
+      metadata: {
+        projectName: existingProject.projectName,
+        projectDescription: existingProject.projectDescription,
+      },
+    });
 
     return res.status(200).json(
       successResponse("Project deleted successfully", {
