@@ -113,9 +113,11 @@ export const getCommentsByTaskController = async (req, res) => {
 
     const threadedComments = buildCommentTree(comments);
 
-    return res
-      .status(200)
-      .json(successResponse("Comments fetched successfully", threadedComments));
+    return res.status(200).json(
+      successResponse("Comments fetched successfully", {
+        comments: threadedComments,
+      })
+    );
   } catch (error) {
     console.error("Error in getCommentsByTaskController:", error);
     return res
