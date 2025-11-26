@@ -5,3 +5,4 @@ export * from "./tasks.model.js";
 export * from "./comments.model.js";
 export * from "./likes.model.js";
 export * from "./reactions.model.js";
+export * from "./activity.model.js";
