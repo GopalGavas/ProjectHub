@@ -19,6 +19,7 @@ import {
 } from "../services/comments.service.js";
 import { buildCommentTree } from "../utils/commentTree.js";
 import { validate as isUUID } from "uuid";
+import { logActivity } from "../services/activity.service.js";
 
 export const createCommentController = async (req, res) => {
   try {
@@ -73,6 +74,17 @@ export const createCommentController = async (req, res) => {
       parentId,
       authorId: req.user.id,
       taskId,
+    });
+
+    await logActivity({
+      projectId,
+      taskId,
+      commentId: taskComment.id,
+      actorId: req.user.id,
+      action: "created_comment",
+      metadata: {
+        comment: taskComment.content,
+      },
     });
 
     return res
@@ -136,7 +148,7 @@ export const updateCommentController = async (req, res) => {
         .json(errorResponse("Validation Error", formattedErrors));
     }
     const { content } = validateData.data;
-    const { commentId } = req.params;
+    const { projectId, taskId, commentId } = req.params;
 
     const existingComment = await checkExistingCommentService(commentId);
     if (!existingComment) {
@@ -158,6 +170,18 @@ export const updateCommentController = async (req, res) => {
 
     const updatedComment = await updateCommentService(commentId, content);
 
+    await logActivity({
+      projectId,
+      taskId,
+      commentId,
+      actorId: req.user.id,
+      action: "comment_updated",
+      metadata: {
+        oldComment: existingComment.content,
+        newComment: updatedComment.content,
+      },
+    });
+
     return res
       .status(200)
       .json(successResponse("Comment updated successfully", updatedComment));
@@ -171,7 +195,7 @@ export const updateCommentController = async (req, res) => {
 
 export const softDeleteCommentController = async (req, res) => {
   try {
-    const { commentId } = req.params;
+    const { projectId, taskId, commentId } = req.params;
 
     if (!commentId || !isUUID(commentId)) {
       return res
@@ -209,6 +233,18 @@ export const softDeleteCommentController = async (req, res) => {
     } else {
       result = await softDeleteCommentService(commentId);
     }
+
+    await logActivity({
+      projectId,
+      taskId,
+      commentId,
+      actorId: req.user.id,
+      action: "soft_deleted_comment",
+      metadata: {
+        softDelete: true,
+        comment: existingComment.content,
+      },
+    });
 
     return res
       .status(200)

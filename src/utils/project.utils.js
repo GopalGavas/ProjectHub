@@ -56,5 +56,5 @@ export const validateProjectAndTask = async (
     };
   }
 
-  return { isValid: true };
+  return { isValid: true, task };
 };

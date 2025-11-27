@@ -25,6 +25,7 @@ import {
 import { z } from "zod";
 import { validate as isUUID } from "uuid";
 import { validateProjectAndTask } from "../utils/project.utils.js";
+import { logActivity } from "../services/activity.service.js";
 
 export const createTaskController = async (req, res) => {
   try {
@@ -109,6 +110,17 @@ export const createTaskController = async (req, res) => {
       status,
       priority,
       dueDate,
+    });
+
+    await logActivity({
+      projectId,
+      taskId: newTask.id,
+      actorId: req.user.id,
+      action: "task_created",
+      metadata: {
+        title: newTask.title,
+        priority: newTask.priority,
+      },
     });
 
     return res
@@ -225,6 +237,8 @@ export const updateTaskController = async (req, res) => {
       }
     }
 
+    const oldTask = validation.task;
+
     const updatedTask = await updateTaskService(projectId, taskId, {
       title,
       description,
@@ -237,6 +251,54 @@ export const updateTaskController = async (req, res) => {
       return res
         .status(500)
         .json(errorResponse("Error while updating the task"));
+    }
+
+    const changes = {};
+
+    if (title && title !== oldTask.title) {
+      changes.title = {
+        old: oldTask.title,
+        new: updatedTask.title,
+      };
+    }
+
+    if (description && description !== oldTask.description) {
+      changes.description = {
+        old: oldTask.description,
+        new: updatedTask.description,
+      };
+    }
+
+    if (priority && priority !== oldTask.priority) {
+      changes.priority = {
+        old: oldTask.priority,
+        new: updatedTask.priority,
+      };
+    }
+
+    if (assignedTo && assignedTo !== oldTask.assignedTo) {
+      changes.assignedTo = {
+        old: oldTask.assignedTo,
+        new: updatedTask.assignedTo,
+      };
+    }
+
+    if (dueDate && dueDate !== oldTask.dueDate) {
+      changes.dueDate = {
+        old: oldTask.dueDate,
+        new: updatedTask.dueDate,
+      };
+    }
+
+    // Only log if something changed
+    if (Object.keys(changes).length > 0) {
+      await logActivity({
+        projectId,
+        taskId,
+        actorId: req.user.id,
+        action: "task_details_updated",
+        metadata: { changes },
+      });
     }
 
     return res
@@ -290,7 +352,7 @@ export const updateTaskStatusController = async (req, res) => {
       req.user.id
     );
 
-    if (!(isOwner || isManager || task.assignedTo !== req.user.id)) {
+    if (!(isOwner || isManager || task.assignedTo === req.user.id)) {
       return res
         .status(403)
         .json(
@@ -318,6 +380,17 @@ export const updateTaskStatusController = async (req, res) => {
           )
         );
     }
+
+    await logActivity({
+      projectId,
+      taskId,
+      actorId: req.user.id,
+      action: "update_task_status",
+      metadata: {
+        oldStatus: task.status,
+        newStatus: updatedTask.status,
+      },
+    });
 
     return res
       .status(200)
@@ -367,8 +440,8 @@ export const softDeleteTaskController = async (req, res) => {
         );
     }
 
-    const restoredTask = await softDeleteTaskService(taskId);
-    if (!restoredTask) {
+    const deactivatedTask = await softDeleteTaskService(taskId);
+    if (!deactivatedTask) {
       return res
         .status(400)
         .json(
@@ -379,9 +452,20 @@ export const softDeleteTaskController = async (req, res) => {
         );
     }
 
+    await logActivity({
+      projectId,
+      taskId,
+      actorId: req.user.id,
+      action: "task_deactivated",
+      metadata: {
+        id: deactivatedTask.id,
+        title: deactivatedTask.title,
+      },
+    });
+
     return res
       .status(200)
-      .json(successResponse("Task deleted Successfully", restoredTask));
+      .json(successResponse("Task deleted Successfully", deactivatedTask));
   } catch (error) {
     console.error("Error in Soft Delete Task Controller: ", error);
     return res.status(500).json(errorResponse("Internal Server Error"));
@@ -440,6 +524,17 @@ export const restoreTaskController = async (req, res) => {
           )
         );
     }
+
+    await logActivity({
+      projectId,
+      taskId,
+      actorId: req.user.id,
+      action: "task_restored",
+      metadata: {
+        id: restoredTask.id,
+        title: restoredTask.title,
+      },
+    });
 
     return res
       .status(200)
@@ -501,6 +596,17 @@ export const deleteTaskController = async (req, res) => {
     }
 
     await deleteTaskService(taskId);
+
+    await logActivity({
+      projectId,
+      taskId,
+      actorId: req.user.id,
+      action: "task_deleted_permanently",
+      metadata: {
+        id: task.id,
+        title: task.title,
+      },
+    });
 
     return res.status(200).json(successResponse("Task Permanently Deleted!"));
   } catch (error) {
