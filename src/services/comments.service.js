@@ -156,3 +156,35 @@ export const getCommentReactionSummaryService = async (commentId, userId) => {
     reactions,
   };
 };
+
+export const hardDeleteCommentService = async (commentId) => {
+  await db.delete(commentsTable).where(eq(commentsTable.id, commentId));
+};
+
+export const hardDeleteCommentThreadService = async (commentId) => {
+  const allComments = await db.select().from(commentsTable);
+
+  const map = new Map();
+
+  allComments.forEach((comment) => {
+    const parent = comment.parentId || "root";
+    if (!map.has(parent)) map.set(parent, []);
+    map.get(parent).push(comment);
+  });
+
+  const idsToDelete = [];
+
+  const collectIds = (parentId) => {
+    idsToDelete.push(parentId);
+    const children = map.get(parentId) || [];
+    if (children) {
+      children.forEach((child) => collectIds(child.id));
+    }
+  };
+
+  collectIds(commentId);
+
+  await db.delete(commentsTable).where(inArray(commentsTable.id, idsToDelete));
+
+  return { deletedId: idsToDelete };
+};

@@ -13,6 +13,8 @@ import {
   checkExistingCommentService,
   createCommentService,
   getCommentsByTaskService,
+  hardDeleteCommentService,
+  hardDeleteCommentThreadService,
   softDeleteCommentService,
   softDeleteCommentThreadService,
   updateCommentService,
@@ -251,6 +253,77 @@ export const softDeleteCommentController = async (req, res) => {
       .json(successResponse("Comment deleted successfully", result));
   } catch (error) {
     console.error("Error in softDeleteCommentController:", error);
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
+  }
+};
+
+export const hardDeleteCommentController = async (req, res) => {
+  try {
+    const { projectId, taskId, commentId } = req.params;
+
+    if (!commentId || !isUUID(commentId)) {
+      return res
+        .status(400)
+        .json(errorResponse("Validation Error", "Invalid commentId"));
+    }
+
+    const existingComment = await checkExistingCommentService(commentId);
+    if (!existingComment) {
+      return res
+        .status(404)
+        .json(
+          errorResponse(
+            "Comment not found",
+            "Comment with given Id does not exists"
+          )
+        );
+    }
+
+    if (req.user.role !== "admin") {
+      return res
+        .status(403)
+        .json(
+          errorResponse(
+            "Forbidden",
+            "Only admins can delete comment permanently"
+          )
+        );
+    }
+
+    if (!existingComment.isDeleted) {
+      return res
+        .status(400)
+        .json(errorResponse("Bad Request", "Comment is not soft Deleted"));
+    }
+
+    let result;
+    if (existingComment.parentId === null) {
+      result = await hardDeleteCommentThreadService(commentId);
+    } else {
+      result = await hardDeleteCommentService(commentId);
+    }
+
+    await logActivity({
+      projectId,
+      taskId,
+      commentId,
+      actorId: req.user.id,
+      action: "hard_deleted_comment",
+      metadata: {
+        deleted: true,
+        comment: existingComment.content,
+      },
+    });
+
+    return res
+      .status(200)
+      .json(
+        successResponse("Comment(s) permanently deleted successfully", result)
+      );
+  } catch (error) {
+    console.error("Error in hardDeleteCommentController:", error);
     return res
       .status(500)
       .json(errorResponse("Internal Server Error", error.message));
