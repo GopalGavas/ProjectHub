@@ -10,6 +10,7 @@ import {
   updateTaskStatusController,
 } from "../controllers/task.controller.js";
 import commentRouter from "./comment.routes.js";
+import { getActivitiesByTaskController } from "../controllers/activity.controller.js";
 
 const taskRouter = Router({ mergeParams: true });
 
@@ -20,6 +21,7 @@ taskRouter.put("/:taskId", updateTaskController);
 taskRouter.put("/:taskId/status", updateTaskStatusController);
 taskRouter.put("/:taskId/delete", softDeleteTaskController);
 taskRouter.put("/:taskId/restore", restoreTaskController);
+taskRouter.get("/:taskId", getActivitiesByTaskController);
 taskRouter.delete("/:taskId", deleteTaskController);
 
 taskRouter.use("/:taskId/comments", commentRouter);

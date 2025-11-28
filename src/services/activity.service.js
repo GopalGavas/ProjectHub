@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { activityTable } from "../models/activity.model.js";
+import { tasksTable } from "../models/tasks.model.js";
 
 export const logActivity = async ({
   projectId,
@@ -40,5 +41,27 @@ export const getActivitiesByProjectService = async (
     limit,
     count: projectActivities.length,
     projectActivities,
+  };
+};
+
+export const getActivitiesByTaskService = async (
+  taskId,
+  page = 1,
+  limit = 10
+) => {
+  const offset = (page - 1) * limit;
+  const taskActivities = await db
+    .select()
+    .from(tasksTable)
+    .where(eq(tasksTable.id, taskId))
+    .orderBy(desc(tasksTable.createdAt))
+    .limit(limit)
+    .offset(offset);
+
+  return {
+    page,
+    limit,
+    count: taskActivities.length,
+    taskActivities,
   };
 };
