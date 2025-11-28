@@ -15,6 +15,7 @@ import {
   updateProjectController,
 } from "../controllers/projects.controller.js";
 import taskRouter from "./task.routes.js";
+import { getActivitiesByProjectController } from "../controllers/activity.controller.js";
 
 const router = Router();
 
@@ -39,6 +40,8 @@ router.delete(
   removeMembersFromProjectController
 );
 router.delete("/:id", hardDeleteProjectController);
+
+router.get("/:projectId/activities", getActivitiesByProjectController);
 
 router.use("/:projectId/tasks", taskRouter);
 

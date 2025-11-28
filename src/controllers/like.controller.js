@@ -13,11 +13,11 @@ import { addReactionSchema } from "../validation/comment.validation.js";
 import { z } from "zod";
 import { checkExistingProjectService } from "../services/project.service.js";
 import { checkMemberService } from "../services/task.service.js";
+import { logActivity } from "../services/activity.service.js";
 
 export const toggleCommentLikeController = async (req, res) => {
   try {
-    const { commentId } = req.params;
-    const { projectId } = req.params;
+    const { commentId, taskId, projectId } = req.params;
 
     if (!isUUID(projectId) || !isUUID(commentId)) {
       return res
@@ -69,6 +69,18 @@ export const toggleCommentLikeController = async (req, res) => {
 
     const result = await toggleCommentLikeService(commentId, req.user.id);
 
+    await logActivity({
+      projectId,
+      taskId,
+      commentId,
+      actorId: req.user.id,
+      action: result.liked ? "liked_comment" : "unliked_comment",
+      metadata: {
+        liked: result.liked,
+        comment: existingComment.content,
+      },
+    });
+
     return res
       .status(200)
       .json(
@@ -95,7 +107,7 @@ export const addReactionToCommentController = async (req, res) => {
         .json(errorResponse("Invalid request", formattedError));
     }
     const { emoji } = validateData.data;
-    const { commentId, projectId } = req.params;
+    const { commentId, taskId, projectId } = req.params;
 
     if (!isUUID(projectId) || !isUUID(commentId)) {
       return res
@@ -151,6 +163,35 @@ export const addReactionToCommentController = async (req, res) => {
       req.user.id,
       emoji
     );
+
+    let action;
+
+    switch (result.action) {
+      case "added":
+        action = "added_reaction_to_comment";
+        break;
+      case "updated":
+        action = "updated_reaction_on_comment";
+        break;
+      case "removed":
+        action = "removed_reaction_from_comment";
+        break;
+      default:
+        action = "reacted_to_comment";
+        break;
+    }
+
+    await logActivity({
+      projectId,
+      taskId,
+      commentId,
+      actorId: req.user.id,
+      action,
+      metadata: {
+        emoji,
+        comment: existingComment.content,
+      },
+    });
 
     return res
       .status(200)

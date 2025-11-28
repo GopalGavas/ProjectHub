@@ -1,3 +1,4 @@
+import { desc, eq } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { activityTable } from "../models/activity.model.js";
 
@@ -17,4 +18,27 @@ export const logActivity = async ({
     action,
     metadata,
   });
+};
+
+export const getActivitiesByProjectService = async (
+  projectId,
+  page = 1,
+  limit = 10
+) => {
+  const offset = (page - 1) * limit;
+
+  const projectActivities = await db
+    .select()
+    .from(activityTable)
+    .where(eq(activityTable.projectId, projectId))
+    .orderBy(desc(activityTable.createdAt))
+    .limit(limit)
+    .offset(offset);
+
+  return {
+    page,
+    limit,
+    count: projectActivities.length,
+    projectActivities,
+  };
 };
