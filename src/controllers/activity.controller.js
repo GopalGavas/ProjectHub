@@ -13,11 +13,6 @@ import {
 import { checkExistingTaskService } from "../services/task.service.js";
 import { getUserById } from "../services/user.service.js";
 
-export const getAllActivitiesForAdminController = async (req, res) => {
-  try {
-  } catch (error) {}
-};
-
 export const getActivitiesByProjectController = async (req, res) => {
   try {
     const { projectId } = req.params;
