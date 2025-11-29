@@ -46,7 +46,7 @@ export const getActivitiesByProjectService = async (
     total,
     totalPages: Math.ceil(total / limit),
     count: projectActivities.length,
-    projectActivities,
+    activities: projectActivities,
   };
 };
 
@@ -76,7 +76,7 @@ export const getActivitiesByTaskService = async (
     total,
     totalPages: Math.ceil(total / limit),
     count: taskActivities.length,
-    taskActivities,
+    activities: taskActivities,
   };
 };
 
@@ -102,6 +102,6 @@ export const getActivitiesByUserService = async (userId, page, limit) => {
     total,
     totalPages: Math.ceil(total / limit),
     count: userActivities.length,
-    userActivities,
+    activities: userActivities,
   };
 };

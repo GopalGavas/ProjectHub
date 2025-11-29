@@ -62,11 +62,14 @@ export const getActivitiesByProjectController = async (req, res) => {
       limitNum
     );
 
-    return res.status(200).json(
-      successResponse("Activities related to project fetched successfully", {
-        activities: projectActivities,
-      })
-    );
+    return res
+      .status(200)
+      .json(
+        successResponse(
+          "Activities related to project fetched successfully",
+          projectActivities
+        )
+      );
   } catch (error) {
     console.error("Error in get activity for project controller", error);
     return res.status(500).json(errorResponse("Internal Server Error"));
@@ -88,6 +91,7 @@ export const getActivitiesByTaskController = async (req, res) => {
     }
 
     const existingTask = await checkExistingTaskService(taskId);
+    const projectId = existingTask.projectId;
 
     if (!existingTask) {
       return res
@@ -122,11 +126,14 @@ export const getActivitiesByTaskController = async (req, res) => {
       limitNum
     );
 
-    return res.status(200).json(
-      successResponse("Activites Related to Task fetched Successfully", {
-        activities: taskActivities,
-      })
-    );
+    return res
+      .status(200)
+      .json(
+        successResponse(
+          "Activites Related to Task fetched Successfully",
+          taskActivities
+        )
+      );
   } catch (error) {
     console.error("Error in get activity for project controller", error);
     return res.status(500).json(errorResponse("Internal Server Error"));
@@ -176,11 +183,11 @@ export const getActivitesByUserController = async (req, res) => {
       limitNum
     );
 
-    return res.status(200).json(
-      successResponse("User activities fetched successfully", {
-        activities: userActivities,
-      })
-    );
+    return res
+      .status(200)
+      .json(
+        successResponse("User activities fetched successfully", userActivities)
+      );
   } catch (error) {
     console.error("Error in Get Activities By user controller: ", error);
     return res.status(500).json(errorResponse("Internal Server Error"));
