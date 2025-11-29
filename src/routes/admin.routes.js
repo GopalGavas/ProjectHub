@@ -11,6 +11,7 @@ import {
   updateUserRoleController,
   hardDeleteUserController,
 } from "../controllers/admin.controller.js";
+import { getActivitesByUserController } from "../controllers/activity.controller.js";
 
 const router = Router();
 
@@ -23,5 +24,6 @@ router.put("/users/deactivate/:id", softDeleteUserController);
 router.put("/users/restore/:id", restoreUserController);
 router.put("/users/role/:id", updateUserRoleController);
 router.delete("/users/delete/:id", hardDeleteUserController);
+router.get("/users/:userId", getActivitesByUserController);
 
 export default router;

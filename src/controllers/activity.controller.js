@@ -8,8 +8,10 @@ import {
 import {
   getActivitiesByProjectService,
   getActivitiesByTaskService,
+  getActivitiesByUserService,
 } from "../services/activity.service.js";
 import { checkExistingTaskService } from "../services/task.service.js";
+import { getUserById } from "../services/user.service.js";
 
 export const getAllActivitiesForAdminController = async (req, res) => {
   try {
@@ -65,11 +67,11 @@ export const getActivitiesByProjectController = async (req, res) => {
       limitNum
     );
 
-    return res
-      .status(200)
-      .json(
-        successResponse("Activities fetched successfully", projectActivities)
-      );
+    return res.status(200).json(
+      successResponse("Activities related to project fetched successfully", {
+        activities: projectActivities,
+      })
+    );
   } catch (error) {
     console.error("Error in get activity for project controller", error);
     return res.status(500).json(errorResponse("Internal Server Error"));
@@ -125,21 +127,67 @@ export const getActivitiesByTaskController = async (req, res) => {
       limitNum
     );
 
-    return res
-      .status(200)
-      .json(
-        successResponse(
-          "Activites Related to Task fetched Successfully",
-          taskActivities
-        )
-      );
+    return res.status(200).json(
+      successResponse("Activites Related to Task fetched Successfully", {
+        activities: taskActivities,
+      })
+    );
   } catch (error) {
     console.error("Error in get activity for project controller", error);
     return res.status(500).json(errorResponse("Internal Server Error"));
   }
 };
 
-export const getActivitesByUserControllerv = async (req, res) => {
+export const getActivitesByUserController = async (req, res) => {
   try {
-  } catch (error) {}
+    const { userId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+
+    if (!isUUID(userId)) {
+      return res
+        .status(400)
+        .json(errorResponse("Invalid Request", "Not a valid User Id"));
+    }
+
+    const existingUser = await getUserById(userId);
+    if (!existingUser) {
+      return res
+        .status(404)
+        .json(
+          errorResponse(
+            "User not found",
+            "User with provided Id does not exists"
+          )
+        );
+    }
+
+    if (req.user.role !== "admin") {
+      return res
+        .status(403)
+        .json(
+          errorResponse(
+            "Forbidden Action",
+            "Only admins have permission to perform this action"
+          )
+        );
+    }
+
+    const userActivities = await getActivitiesByUserService(
+      userId,
+      pageNum,
+      limitNum
+    );
+
+    return res.status(200).json(
+      successResponse("User activities fetched successfully", {
+        activities: userActivities,
+      })
+    );
+  } catch (error) {
+    console.error("Error in Get Activities By user controller: ", error);
+    return res.status(500).json(errorResponse("Internal Server Error"));
+  }
 };
