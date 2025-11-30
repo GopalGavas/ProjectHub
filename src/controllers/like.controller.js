@@ -11,62 +11,18 @@ import {
 } from "../services/like.service.js";
 import { addReactionSchema } from "../validation/comment.validation.js";
 import { z } from "zod";
-import { checkExistingProjectService } from "../services/project.service.js";
-import { checkMemberService } from "../services/task.service.js";
 import { logActivity } from "../services/activity.service.js";
+import { validateProjectAndComment } from "../utils/project.utils.js";
 
 export const toggleCommentLikeController = async (req, res) => {
   try {
     const { commentId, taskId, projectId } = req.params;
 
-    if (!isUUID(projectId) || !isUUID(commentId)) {
-      return res
-        .status(400)
-        .json(
-          errorResponse(
-            `Invalid ${!isUUID(projectId) ? "Project" : "Comment"} Id`,
-            `Enter a valid ${!isUUID(projectId) ? "Project" : "Comment"} Id`
-          )
-        );
-    }
-
-    const project = await checkExistingProjectService(projectId);
-    if (!project) {
-      return res
-        .status(404)
-        .json(
-          errorResponse(
-            "Project not found",
-            "Project with provided Id does not exists"
-          )
-        );
-    }
-
-    const existingComment = await checkExistingCommentService(commentId);
-    if (!existingComment) {
-      return res
-        .status(404)
-        .json(
-          errorResponse(
-            "Comment not found",
-            "Comment with given Id does not exists"
-          )
-        );
-    }
-
-    const isMember = await checkMemberService(projectId, req.user.id);
-
-    if (!isMember) {
-      return res
-        .status(403)
-        .json(
-          errorResponse(
-            "Forbidden Request",
-            "Only project members can like this comment."
-          )
-        );
-    }
-
+    const { comment } = await validateProjectAndComment(
+      projectId,
+      commentId,
+      req.user.id
+    );
     const result = await toggleCommentLikeService(commentId, req.user.id);
 
     await logActivity({
@@ -77,7 +33,7 @@ export const toggleCommentLikeController = async (req, res) => {
       action: result.liked ? "liked_comment" : "unliked_comment",
       metadata: {
         liked: result.liked,
-        comment: existingComment.content,
+        comment: comment.content,
       },
     });
 
@@ -109,54 +65,11 @@ export const addReactionToCommentController = async (req, res) => {
     const { emoji } = validateData.data;
     const { commentId, taskId, projectId } = req.params;
 
-    if (!isUUID(projectId) || !isUUID(commentId)) {
-      return res
-        .status(400)
-        .json(
-          errorResponse(
-            `Invalid ${!isUUID(projectId) ? "Project" : "Comment"} ID`,
-            `The provided ${
-              !isUUID(projectId) ? "Project" : "Comment"
-            } ID is not valid.`
-          )
-        );
-    }
-
-    const project = await checkExistingProjectService(projectId);
-    if (!project) {
-      return res
-        .status(404)
-        .json(
-          errorResponse(
-            "Project not found",
-            "Project with provided Id does not exists"
-          )
-        );
-    }
-
-    const isMember = await checkMemberService(projectId, req.user.id);
-    if (!isMember) {
-      return res
-        .status(403)
-        .json(
-          errorResponse(
-            "Forbidden",
-            "Only Project Members can react on Comments"
-          )
-        );
-    }
-
-    const existingComment = await checkExistingCommentService(commentId);
-    if (!existingComment) {
-      return res
-        .status(404)
-        .json(
-          errorResponse(
-            "Comment not found",
-            "Comment with given Id does not exists"
-          )
-        );
-    }
+    const { comment } = await validateProjectAndComment(
+      projectId,
+      commentId,
+      req.user.id
+    );
 
     const result = await addReactionToCommentService(
       commentId,
@@ -189,7 +102,7 @@ export const addReactionToCommentController = async (req, res) => {
       action,
       metadata: {
         emoji,
-        comment: existingComment.content,
+        comment: comment.content,
       },
     });
 
@@ -211,54 +124,7 @@ export const getCommentReactionSummaryController = async (req, res) => {
   try {
     const { projectId, commentId } = req.params;
 
-    if (!isUUID(projectId) || !isUUID(commentId)) {
-      return res
-        .status(400)
-        .json(
-          errorResponse(
-            `Invalid ${!isUUID(projectId) ? "Project" : "Comment"} ID`,
-            `The provided ${
-              !isUUID(projectId) ? "Project" : "Comment"
-            } ID is not valid.`
-          )
-        );
-    }
-
-    const project = await checkExistingProjectService(projectId);
-    if (!project) {
-      return res
-        .status(404)
-        .json(
-          errorResponse(
-            "Project not found",
-            "Project with provided Id does not exists"
-          )
-        );
-    }
-
-    const isMember = await checkMemberService(projectId, req.user.id);
-    if (!isMember) {
-      return res
-        .status(403)
-        .json(
-          errorResponse(
-            "Forbidden",
-            "Only Project Members can perform this action"
-          )
-        );
-    }
-
-    const existingComment = await checkExistingCommentService(commentId);
-    if (!existingComment) {
-      return res
-        .status(404)
-        .json(
-          errorResponse(
-            "Comment not found",
-            "Comment with given Id does not exists"
-          )
-        );
-    }
+    await validateProjectAndComment(projectId, commentId, req.user.id);
 
     const result = await getCommentReactionSummaryService(
       commentId,
