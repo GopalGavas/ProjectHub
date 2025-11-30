@@ -304,3 +304,23 @@ export const restoreProjectService = async (projectId) => {
 export const deleteProjectService = async (projectId) => {
   await db.delete(projectsTable).where(eq(projectsTable.id, projectId));
 };
+
+export const getProjectsByUserService = async (userId) => {
+  const projects = await db
+    .select({
+      projectId: projectsTable.id,
+      projectRole: projectMembersTable.role,
+      projectName: projectsTable.projectName,
+      projectDescription: projectsTable.projectDescription,
+      projectActive: projectsTable.isActive,
+      createdAt: projectsTable.createdAt,
+    })
+    .from(projectMembersTable)
+    .innerJoin(
+      projectsTable,
+      eq(projectMembersTable.projectId, projectsTable.id)
+    )
+    .where(eq(projectMembersTable.userId, userId));
+
+  return projects;
+};

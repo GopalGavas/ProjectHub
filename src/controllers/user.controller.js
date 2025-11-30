@@ -14,6 +14,7 @@ import {
 } from "../validation/user.validation.js";
 import { z } from "zod";
 import { validate as isUUID } from "uuid";
+import { getProjectsByUserService } from "../services/project.service.js";
 
 export const getUserProfileController = async (req, res) => {
   try {
@@ -32,12 +33,17 @@ export const getUserProfileController = async (req, res) => {
         );
     }
 
+    const projects = await getProjectsByUserService(userId);
+
     return res.status(200).json(
       successResponse("User Profile Fetched Successfully", {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        },
+        projects,
       })
     );
   } catch (error) {
