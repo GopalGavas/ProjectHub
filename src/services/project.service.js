@@ -3,6 +3,12 @@ import { projectsTable } from "../models/projects.model.js";
 import { projectMembersTable } from "../models/project-members.model.js";
 import { usersTable } from "../models/user.model.js";
 import { and, eq, ilike, inArray, sql, or } from "drizzle-orm";
+import {
+  getCache,
+  setCache,
+  deleteCache,
+  deleteCachePatterns,
+} from "../utils/cache.utils.js";
 
 export const createProjectService = async (
   projectName,
@@ -18,6 +24,8 @@ export const createProjectService = async (
     })
     .returning();
 
+  await deleteCache(`project:${newProject.id}`);
+  await deleteCachePatterns("projects:list:*");
   return newProject;
 };
 
@@ -46,10 +54,17 @@ export const addProjectMembersService = async (projectId, members, tx = db) => {
       projectId: projectMembersTable.projectId,
     });
 
+  await deleteCache(`project:${projectId}`);
+  await deleteCachePatterns("projects:list:*");
   return inserted;
 };
 
 export const getProjectByIdService = async (projectId) => {
+  const cachedKey = `project:${projectId}`;
+
+  const cached = await getCache(cachedKey);
+  if (cached) return cached;
+
   const rows = await db
     .select({
       projectId: projectsTable.id,
@@ -92,6 +107,8 @@ export const getProjectByIdService = async (projectId) => {
       })),
   };
 
+  await setCache(cachedKey, project, 60);
+
   return project;
 };
 
@@ -100,6 +117,11 @@ export const getAllProjectsService = async ({
   limit = 10,
   search = "",
 }) => {
+  const cachedKey = `projects:list:${offset}:${limit}:${search}`;
+
+  const cached = await getCache(cachedKey);
+  if (cached) return cached;
+
   let whereClause = eq(projectsTable.isActive, true);
 
   if (search) {
@@ -126,7 +148,7 @@ export const getAllProjectsService = async ({
     .offset(offset)
     .limit(limit);
 
-  if (projects === 0) {
+  if (projects.length === 0) {
     return { projects: [], totalCount: 0 };
   }
 
@@ -169,7 +191,11 @@ export const getAllProjectsService = async ({
 
   const totalCount = parseInt(totalCountResult[0].count, 10);
 
-  return { projectWithMembers, totalCount };
+  const finalData = { projectWithMembers, totalCount };
+
+  await setCache(cachedKey, finalData, 90);
+
+  return finalData;
 };
 
 export const checkExistingProjectService = async (projectId) => {
@@ -196,6 +222,8 @@ export const updateProjectService = async (
     .where(eq(projectsTable.id, projectId))
     .returning();
 
+  await deleteCache(`project:${projectId}`);
+  await deleteCachePatterns("projects:list:*");
   return updatedProject;
 };
 
@@ -247,7 +275,7 @@ export const removeProjectMemberService = async (
   membersId,
   tx = db
 ) => {
-  return await tx
+  const removed = await tx
     .delete(projectMembersTable)
     .where(
       and(
@@ -255,6 +283,11 @@ export const removeProjectMemberService = async (
         inArray(projectMembersTable.userId, membersId)
       )
     );
+
+  await deleteCache(`project:${projectId}`);
+  await deleteCachePatterns("projects:list:*");
+
+  return removed;
 };
 
 export const userDetailsService = async (userIds) => {
@@ -282,6 +315,9 @@ export const deactivateProjectService = async (projectId) => {
       isActive: projectsTable.isActive,
     });
 
+  await deleteCache(`project:${projectId}`);
+  await deleteCachePatterns("projects:list:*");
+
   return deactivatedProject;
 };
 
@@ -298,11 +334,17 @@ export const restoreProjectService = async (projectId) => {
       isActive: projectsTable.isActive,
     });
 
+  await deleteCache(`project:${projectId}`);
+  await deleteCachePatterns("projects:list:*");
+
   return restoredProject;
 };
 
 export const deleteProjectService = async (projectId) => {
   await db.delete(projectsTable).where(eq(projectsTable.id, projectId));
+
+  await deleteCache(`project:${projectId}`);
+  await deleteCachePatterns("projects:list:*");
 };
 
 export const getProjectsByUserService = async (userId) => {

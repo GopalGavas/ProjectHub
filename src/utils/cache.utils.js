@@ -12,3 +12,31 @@ export const getCache = async (key) => {
 export const deleteCache = async (key) => {
   await redis.del(key);
 };
+
+export const deleteCachePatterns = async (pattern) => {
+  const stream = redis.scanStream({
+    match: pattern,
+    count: 50,
+  });
+
+  return new Promise((resolve, reject) => {
+    stream.on("data", (keys) => {
+      stream.pause();
+
+      Promise.resolve()
+        .then(() => {
+          if (keys.length) {
+            return redis.del(...keys);
+          }
+        })
+        .then(() => stream.resume())
+        .catch((err) => {
+          stream.destroy();
+          reject(err);
+        });
+    });
+
+    stream.on("end", resolve);
+    stream.on("error", reject);
+  });
+};

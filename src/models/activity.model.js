@@ -5,9 +5,9 @@ export const activityTable = pgTable("activities", {
 
   projectId: uuid("project_id").notNull(),
 
-  taskId: uuid("task_id").notNull(),
+  taskId: uuid("task_id"),
 
-  commentId: uuid("comment_id").notNull(),
+  commentId: uuid("comment_id"),
 
   actorId: uuid("actor_id").notNull(),
 
