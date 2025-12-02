@@ -5,9 +5,21 @@ import { tasksTable } from "../models/tasks.model.js";
 import { and, eq, or, ilike, desc, asc, sql } from "drizzle-orm";
 import { usersTable } from "../models/user.model.js";
 import { validate as isUUID } from "uuid";
+import {
+  setCache,
+  getCache,
+  deleteCache,
+  deleteCachePatterns,
+} from "../utils/cache.utils.js";
 
 export const createTaskService = async (taskData) => {
   const [task] = await db.insert(tasksTable).values(taskData).returning();
+
+  await Promise.all([
+    deleteCache(`tasks:task:${task.id}`),
+    deleteCachePatterns(`tasks:list:${task.projectId}:*`),
+  ]);
+
   return task;
 };
 
@@ -51,10 +63,19 @@ export const updateTaskService = async (projectId, taskId, updatedData) => {
     .where(and(eq(tasksTable.id, taskId), eq(tasksTable.projectId, projectId)))
     .returning();
 
+  await Promise.all([
+    deleteCache(`tasks:task:${taskId}`),
+    deleteCachePatterns(`tasks:list:${projectId}:*`),
+  ]);
+
   return updatedTask;
 };
 
 export const getTaskByIdService = async (taskId) => {
+  const cachedKey = `tasks:task:${taskId}`;
+  const cache = await getCache(cachedKey);
+  if (cache) return cache;
+
   const [task] = await db
     .select({
       taskId: tasksTable.id,
@@ -74,6 +95,8 @@ export const getTaskByIdService = async (taskId) => {
     .leftJoin(usersTable, eq(usersTable.id, tasksTable.assignedTo))
     .where(eq(tasksTable.id, taskId));
 
+  if (task) setCache(`tasks:task:${taskId}`, task, 300);
+
   return task || null;
 };
 
@@ -90,7 +113,13 @@ export const updateTaskStatusService = async (status, taskId) => {
       description: tasksTable.description,
       priority: tasksTable.priority,
       status: tasksTable.status,
+      projectId: tasksTable.projectId,
     });
+
+  await Promise.all([
+    deleteCache(`tasks:task:${taskId}`),
+    deleteCachePatterns(`tasks:list:${updatedTask.projectId}:*`),
+  ]);
 
   return updatedTask;
 };
@@ -107,7 +136,13 @@ export const softDeleteTaskService = async (taskId) => {
       title: tasksTable.title,
       description: tasksTable.description,
       isDeleted: tasksTable.isDeleted,
+      projectId: tasksTable.projectId,
     });
+
+  await Promise.all([
+    deleteCache(`tasks:task:${taskId}`),
+    deleteCachePatterns(`tasks:list:${task.projectId}:*`),
+  ]);
 
   return task;
 };
@@ -124,17 +159,49 @@ export const restoreTaskService = async (taskId) => {
       title: tasksTable.title,
       description: tasksTable.description,
       isDeleted: tasksTable.isDeleted,
+      projectId: tasksTable.projectId,
     });
+
+  await Promise.all([
+    deleteCache(`tasks:task:${taskId}`),
+    deleteCachePatterns(`tasks:list:${task.projectId}:*`),
+  ]);
 
   return task;
 };
 
 export const deleteTaskService = async (taskId) => {
+  const [task] = await db
+    .select({ projectId: tasksTable.projectId })
+    .from(tasksTable)
+    .where(eq(tasksTable.id, taskId));
+
+  if (!task) return null;
+
   await db.delete(tasksTable).where(eq(tasksTable.id, taskId));
+
+  await Promise.all([
+    deleteCache(`tasks:task:${taskId}`),
+    deleteCachePatterns(`tasks:list:${task.projectId}:*`),
+  ]);
+
+  return task;
 };
 
 export const getAllTasksService = async (projectId, offset, limit, filters) => {
   const { status, priority, assignee, search, sortBy, order } = filters;
+
+  const filtersKey = JSON.stringify({
+    status,
+    priority,
+    assignee,
+    search,
+    sortBy,
+    order,
+  });
+  const cachedKey = `tasks:list:${projectId}:${filtersKey}:${offset}:${limit}`;
+  const cache = await getCache(cachedKey);
+  if (cache) return cache;
 
   const conditions = [
     eq(tasksTable.projectId, projectId),
@@ -177,6 +244,8 @@ export const getAllTasksService = async (projectId, offset, limit, filters) => {
     .where(and(...conditions));
 
   const totalCount = countTasks[0]?.count || 0;
+
+  await setCache(cachedKey, { tasks, totalCount }, 120);
 
   return { tasks, totalCount };
 };
