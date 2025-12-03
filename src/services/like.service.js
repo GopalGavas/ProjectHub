@@ -2,6 +2,7 @@ import { commentLikesTable } from "../models/likes.model.js";
 import { db } from "../db/index.js";
 import { and, eq } from "drizzle-orm";
 import { commentReactionsTable } from "../models/reactions.model.js";
+import { deleteCache, deleteCachePatterns } from "../utils/cache.utils.js";
 
 export const toggleCommentLikeService = async (commentId, userId) => {
   const existingLike = await db
@@ -13,6 +14,12 @@ export const toggleCommentLikeService = async (commentId, userId) => {
         eq(commentLikesTable.userId, userId)
       )
     );
+
+  await Promise.all([
+    deleteCache(`comments:${commentId}`),
+    deleteCache(`comments:${commentId}:summary`),
+    deleteCachePatterns("comments:list:*"),
+  ]);
 
   if (existingLike.length > 0) {
     await db
@@ -43,6 +50,12 @@ export const addReactionToCommentService = async (commentId, userId, emoji) => {
         eq(commentReactionsTable.userId, userId)
       )
     );
+
+  await Promise.all([
+    deleteCache(`comments:${commentId}`),
+    deleteCache(`comments:${commentId}:summary`),
+    deleteCachePatterns("comments:list:*"),
+  ]);
 
   if (existingReaction.length === 0) {
     const [newReaction] = await db
