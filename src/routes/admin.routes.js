@@ -19,11 +19,11 @@ router.use(authenticateUser);
 router.use(authoriseRoles("admin"));
 
 router.get("/users/:id", fetchUserByIdController);
+router.get("/users/:userId/activities", getActivitesByUserController);
 router.get("/users", getAllUsersController);
 router.put("/users/deactivate/:id", softDeleteUserController);
 router.put("/users/restore/:id", restoreUserController);
 router.put("/users/role/:id", updateUserRoleController);
 router.delete("/users/delete/:id", hardDeleteUserController);
-router.get("/users/:userId", getActivitesByUserController);
 
 export default router;

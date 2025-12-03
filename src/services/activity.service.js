@@ -86,7 +86,7 @@ export const getActivitiesByUserService = async (userId, page, limit) => {
   const [{ total }] = await db
     .select({ total: count() })
     .from(activityTable)
-    .where(eq(activityTable.taskId, taskId));
+    .where(eq(activityTable.actorId, userId));
 
   const userActivities = await db
     .select()

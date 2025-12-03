@@ -21,7 +21,7 @@ taskRouter.put("/:taskId", updateTaskController);
 taskRouter.put("/:taskId/status", updateTaskStatusController);
 taskRouter.put("/:taskId/delete", softDeleteTaskController);
 taskRouter.put("/:taskId/restore", restoreTaskController);
-taskRouter.get("/:taskId", getActivitiesByTaskController);
+taskRouter.get("/:taskId/activities", getActivitiesByTaskController);
 taskRouter.delete("/:taskId", deleteTaskController);
 
 taskRouter.use("/:taskId/comments", commentRouter);

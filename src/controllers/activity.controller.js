@@ -148,7 +148,7 @@ export const getActivitesByUserController = async (req, res) => {
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
 
-    if (!isUUID(userId)) {
+    if (!userId || !isUUID(userId)) {
       return res
         .status(400)
         .json(errorResponse("Invalid Request", "Not a valid User Id"));
