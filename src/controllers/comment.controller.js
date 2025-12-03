@@ -12,6 +12,7 @@ import {
 import {
   checkExistingCommentService,
   createCommentService,
+  getCommentByIdService,
   getCommentsByTaskService,
   hardDeleteCommentService,
   hardDeleteCommentThreadService,
@@ -94,6 +95,40 @@ export const createCommentController = async (req, res) => {
       .json(successResponse("Comment Created Successfully", taskComment));
   } catch (error) {
     console.error("Error in createCommentController:", error);
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
+  }
+};
+
+export const getCommentByIdController = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+
+    if (!commentId || !isUUID(commentId)) {
+      return res
+        .status(400)
+        .json(errorResponse("Request Invalid", "Provide a valid uuid"));
+    }
+
+    const comment = await getCommentByIdService(commentId);
+
+    if (!comment) {
+      return res
+        .status(404)
+        .json(
+          errorResponse(
+            "Comment not found",
+            "Comment with provided Id does not exists"
+          )
+        );
+    }
+
+    return res
+      .status(200)
+      .json(successResponse("Comment fetched successfully", comment));
+  } catch (error) {
+    console.error("Error in getCommentByIdController:", error);
     return res
       .status(500)
       .json(errorResponse("Internal Server Error", error.message));

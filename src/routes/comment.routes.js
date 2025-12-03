@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createCommentController,
+  getCommentByIdController,
   getCommentsByTaskController,
   hardDeleteCommentController,
   softDeleteCommentController,
@@ -16,6 +17,7 @@ const commentRouter = Router({ mergeParams: true });
 
 commentRouter.post("/", createCommentController);
 commentRouter.get("/", getCommentsByTaskController);
+commentRouter.get("/:commentId", getCommentByIdController);
 commentRouter.put("/:commentId", updateCommentController);
 commentRouter.delete("/:commentId", hardDeleteCommentController);
 commentRouter.put("/:commentId/delete", softDeleteCommentController);

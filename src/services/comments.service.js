@@ -4,6 +4,12 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { usersTable } from "../models/user.model.js";
 import { commentLikesTable } from "../models/likes.model.js";
 import { commentReactionsTable } from "../models/reactions.model.js";
+import {
+  setCache,
+  getCache,
+  deleteCache,
+  deleteCachePatterns,
+} from "../utils/cache.utils.js";
 
 export const createCommentService = async ({
   content,
@@ -36,7 +42,25 @@ export const checkExistingCommentService = async (commentId) => {
   return comment;
 };
 
+export const getCommentByIdService = async (commentId) => {
+  const cachedKey = `comments:${commentId}`;
+  const cached = await setCache(cachedKey);
+  if (cached) return cached;
+
+  const [comment] = await db
+    .select()
+    .from(commentsTable)
+    .where(eq(commentsTable.id, commentId));
+
+  await setCache(cachedKey);
+  return comment;
+};
+
 export const getCommentsByTaskService = async (taskId) => {
+  const cachedKey = `comments:comment:${taskId}`;
+  const cached = await getCache(cachedKey);
+  if (cached) return cached;
+
   const comments = await db
     .select({
       id: commentsTable.id,
@@ -58,6 +82,8 @@ export const getCommentsByTaskService = async (taskId) => {
     .where(
       and(eq(commentsTable.taskId, taskId), eq(commentsTable.isDeleted, false))
     );
+
+  await setCache(cachedKey, comments, 90);
 
   return comments;
 };
