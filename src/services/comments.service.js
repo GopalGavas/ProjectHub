@@ -1,6 +1,6 @@
 import { commentsTable } from "../models/comments.model.js";
 import { db } from "../db/index.js";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { usersTable } from "../models/user.model.js";
 import { commentLikesTable } from "../models/likes.model.js";
 import { commentReactionsTable } from "../models/reactions.model.js";
@@ -30,6 +30,12 @@ export const createCommentService = async ({
       updatedAt: commentsTable.updatedAt,
     });
 
+  await Promise.all([
+    deleteCache(`comments:${comment.id}`),
+    deleteCache(`comments:${comment.id}:summary`),
+    deleteCachePatterns(`comments:list:${taskId}:*`),
+  ]);
+
   return comment;
 };
 
@@ -44,20 +50,22 @@ export const checkExistingCommentService = async (commentId) => {
 
 export const getCommentByIdService = async (commentId) => {
   const cachedKey = `comments:${commentId}`;
-  const cached = await setCache(cachedKey);
+  const cached = await getCache(cachedKey);
   if (cached) return cached;
 
   const [comment] = await db
     .select()
     .from(commentsTable)
-    .where(eq(commentsTable.id, commentId));
+    .where(
+      and(eq(commentsTable.id, commentId), eq(commentsTable.isDeleted, false))
+    );
 
-  await setCache(cachedKey);
+  await setCache(cachedKey, comment, 120);
   return comment;
 };
 
 export const getCommentsByTaskService = async (taskId) => {
-  const cachedKey = `comments:comment:${taskId}`;
+  const cachedKey = `comments:list:${taskId}`;
   const cached = await getCache(cachedKey);
   if (cached) return cached;
 
@@ -81,9 +89,10 @@ export const getCommentsByTaskService = async (taskId) => {
     .leftJoin(usersTable, eq(commentsTable.authorId, usersTable.id))
     .where(
       and(eq(commentsTable.taskId, taskId), eq(commentsTable.isDeleted, false))
-    );
+    )
+    .orderBy(asc(commentsTable.createdAt));
 
-  await setCache(cachedKey, comments, 90);
+  await setCache(cachedKey, comments, 120);
 
   return comments;
 };
@@ -98,11 +107,18 @@ export const updateCommentService = async (commentId, content) => {
     .returning({
       id: commentsTable.id,
       content: commentsTable.content,
+      taskId: commentsTable.taskId,
       parentId: commentsTable.parentId,
       authorId: commentsTable.authorId,
       createdAt: commentsTable.createdAt,
       updatedAt: commentsTable.updatedAt,
     });
+
+  await Promise.all([
+    await deleteCache(`comments:${commentId}`),
+    await deleteCache(`comments:${commentId}:summary`),
+    await deleteCachePatterns(`comments:list:${updatedComment.taskId}:*`),
+  ]);
 
   return updatedComment;
 };
@@ -117,6 +133,7 @@ export const softDeleteCommentService = async (commentId) => {
     .returning({
       id: commentsTable.id,
       content: commentsTable.content,
+      taskId: commentsTable.taskId,
       parentId: commentsTable.parentId,
       authorId: commentsTable.authorId,
       createdAt: commentsTable.createdAt,
@@ -124,10 +141,25 @@ export const softDeleteCommentService = async (commentId) => {
       isDeleted: commentsTable.isDeleted,
     });
 
+  await Promise.all([
+    deleteCache(`comments:${commentId}`),
+    deleteCache(`comments:${commentId}:summary`),
+    deleteCachePatterns(`comments:list:${deletedComment.taskId}:*`),
+  ]);
+
   return deletedComment;
 };
 
 export const softDeleteCommentThreadService = async (commentId) => {
+  const [rootComment] = await db
+    .select()
+    .from(commentsTable)
+    .where(eq(commentsTable.id, commentId));
+
+  if (!rootComment) return null;
+
+  const taskId = rootComment.taskId;
+
   const allComments = await db.select().from(commentsTable);
 
   const map = new Map();
@@ -157,10 +189,20 @@ export const softDeleteCommentThreadService = async (commentId) => {
     })
     .where(inArray(commentsTable.id, idsToDelete));
 
+  await Promise.all([
+    ...idsToDelete.map((id) => deleteCache(`comments:${id}`)),
+    ...idsToDelete.map((id) => deleteCache(`comments:${id}:summary`)),
+    deleteCachePatterns(`comments:list:${taskId}:*`),
+  ]);
+
   return { deletedId: idsToDelete };
 };
 
 export const getCommentReactionSummaryService = async (commentId, userId) => {
+  const cachedKey = `comments:${commentId}:summary`;
+  const cached = await getCache(cachedKey);
+  if (cached) return cached;
+
   const likeCount = await db
     .select({ count: sql`COUNT(*)` })
     .from(commentLikesTable)
@@ -177,17 +219,42 @@ export const getCommentReactionSummaryService = async (commentId, userId) => {
     .where(eq(commentReactionsTable.commentId, commentId))
     .groupBy(commentReactionsTable.emoji);
 
-  return {
+  const summary = {
     likes: likeCount,
     reactions,
   };
+
+  await setCache(cachedKey, summary, 120);
+  return summary;
 };
 
 export const hardDeleteCommentService = async (commentId) => {
+  const [comment] = await db
+    .select({
+      taskId: commentsTable.taskId,
+    })
+    .from(commentsTable)
+    .where(eq(commentsTable.id, commentId));
+
   await db.delete(commentsTable).where(eq(commentsTable.id, commentId));
+
+  await Promise.all([
+    deleteCache(`comments:${commentId}`),
+    deleteCache(`comments:${commentId}:summary`),
+    deleteCachePatterns(`comments:list:${comment.taskId}:*`),
+  ]);
 };
 
 export const hardDeleteCommentThreadService = async (commentId) => {
+  const [rootComment] = await db
+    .select()
+    .from(commentsTable)
+    .where(eq(commentsTable.id, commentId));
+
+  if (!rootComment) return null;
+
+  const taskId = rootComment.taskId;
+
   const allComments = await db.select().from(commentsTable);
 
   const map = new Map();
@@ -211,6 +278,12 @@ export const hardDeleteCommentThreadService = async (commentId) => {
   collectIds(commentId);
 
   await db.delete(commentsTable).where(inArray(commentsTable.id, idsToDelete));
+
+  await Promise.all([
+    ...idsToDelete.map((id) => deleteCache(`comments:${id}`)),
+    ...idsToDelete.map((id) => deleteCache(`comments:${id}:summary`)),
+    deleteCachePatterns(`comments:list:${taskId}:*`),
+  ]);
 
   return { deletedId: idsToDelete };
 };
