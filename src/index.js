@@ -1,12 +1,17 @@
 import "dotenv/config";
 import express from "express";
-import cookieParser from "cookie-parser";
+import { applySecurity } from "./middlewares/security.middleware.js";
+import {
+  authRateLimiter,
+  globalLimiter,
+} from "./middlewares/rateLimiter.middleware.js";
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-app.use(express.json());
-app.use(cookieParser());
+applySecurity(app);
+app.use("/api/auth", authRateLimiter);
+app.use("/api", globalLimiter);
 
 import authRouter from "./routes/auth.routes.js";
 import userRouter from "./routes/user.routes.js";
