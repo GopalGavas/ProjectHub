@@ -48,7 +48,6 @@ export const toggleCommentLikeController = async (req, res) => {
         )
       );
   } catch (error) {
-    console.error("Error toggling comment like:", error);
     return res.status(500).json(errorResponse("Internal server error"));
   }
 };
@@ -115,7 +114,6 @@ export const addReactionToCommentController = async (req, res) => {
         )
       );
   } catch (error) {
-    console.error("Error adding reaction controller to comment:", error);
     return res.status(500).json(errorResponse("Internal server error"));
   }
 };
@@ -135,7 +133,6 @@ export const getCommentReactionSummaryController = async (req, res) => {
       .status(200)
       .json(successResponse("Comment Summary fetched successfully", result));
   } catch (error) {
-    console.error("Error in Get Comment Reaction Controller", error);
     return res.status(500).json(errorResponse("Internal Server Error"));
   }
 };

@@ -57,8 +57,9 @@ export const registerUserController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("Register User Error: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -133,8 +134,9 @@ export const loginUserController = async (req, res) => {
       })
       .json(successResponse("User logged in Successfully", responseData));
   } catch (error) {
-    console.error("Login User Error: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -150,8 +152,9 @@ export const logoutUserController = async (_, res) => {
       .status(200)
       .json(successResponse("User Logged out successfully"));
   } catch (error) {
-    console.error("Logout User Error: ", error);
-    return res.status(500).json(errorResponse("Internal Server error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server error", error.message));
   }
 };
 
@@ -204,8 +207,9 @@ export const generateResetPassTokenController = async (req, res) => {
       .status(200)
       .json(successResponse("Password reset link sent to your email"));
   } catch (error) {
-    console.error("Forget Password Error: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -243,7 +247,8 @@ export const resetPasswordController = async (req, res) => {
       .status(200)
       .json(successResponse("Password reset successfull, you can now login"));
   } catch (error) {
-    console.error("Reset Password Error: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };

@@ -127,8 +127,9 @@ export const createTaskController = async (req, res) => {
       .status(201)
       .json(successResponse("Task Created Successfully", newTask));
   } catch (error) {
-    console.error("Error in Create Task Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -154,8 +155,9 @@ export const getTaskByIdController = async (req, res) => {
       .status(200)
       .json(successResponse("Task fetched Successfully", task));
   } catch (error) {
-    console.error("Error in Get Task By Id Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -305,8 +307,9 @@ export const updateTaskController = async (req, res) => {
       .status(200)
       .json(successResponse("Tasks updated  Successfully", updatedTask));
   } catch (error) {
-    console.error("Error in Create Task Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -396,8 +399,9 @@ export const updateTaskStatusController = async (req, res) => {
       .status(200)
       .json(successResponse("Task Status Updated Successfully", updatedTask));
   } catch (error) {
-    console.error("Error in Create Task Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -467,8 +471,9 @@ export const softDeleteTaskController = async (req, res) => {
       .status(200)
       .json(successResponse("Task deleted Successfully", deactivatedTask));
   } catch (error) {
-    console.error("Error in Soft Delete Task Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -540,8 +545,9 @@ export const restoreTaskController = async (req, res) => {
       .status(200)
       .json(successResponse("Task Restored Successfully", restoredTask));
   } catch (error) {
-    console.error("Error in Restore Task Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -610,8 +616,7 @@ export const deleteTaskController = async (req, res) => {
 
     return res.status(200).json(successResponse("Task Permanently Deleted!"));
   } catch (error) {
-    console.error("Error in Delete Task Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res.status(500).json(errorResponse("Internal Server Error", error));
   }
 };
 
@@ -696,7 +701,8 @@ export const getAllTasksController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("Error in Get All Tasks Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };

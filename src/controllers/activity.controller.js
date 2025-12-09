@@ -71,8 +71,9 @@ export const getActivitiesByProjectController = async (req, res) => {
         )
       );
   } catch (error) {
-    console.error("Error in get activity for project controller", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -135,8 +136,9 @@ export const getActivitiesByTaskController = async (req, res) => {
         )
       );
   } catch (error) {
-    console.error("Error in get activity for project controller", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -189,7 +191,8 @@ export const getActivitesByUserController = async (req, res) => {
         successResponse("User activities fetched successfully", userActivities)
       );
   } catch (error) {
-    console.error("Error in Get Activities By user controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };

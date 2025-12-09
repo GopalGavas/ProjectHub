@@ -94,7 +94,6 @@ export const createCommentController = async (req, res) => {
       .status(201)
       .json(successResponse("Comment Created Successfully", taskComment));
   } catch (error) {
-    console.error("Error in createCommentController:", error);
     return res
       .status(500)
       .json(errorResponse("Internal Server Error", error.message));
@@ -128,7 +127,6 @@ export const getCommentByIdController = async (req, res) => {
       .status(200)
       .json(successResponse("Comment fetched successfully", comment));
   } catch (error) {
-    console.error("Error in getCommentByIdController:", error);
     return res
       .status(500)
       .json(errorResponse("Internal Server Error", error.message));
@@ -168,7 +166,6 @@ export const getCommentsByTaskController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("Error in getCommentsByTaskController:", error);
     return res
       .status(500)
       .json(errorResponse("Internal Server Error", error.message));
@@ -223,7 +220,6 @@ export const updateCommentController = async (req, res) => {
       .status(200)
       .json(successResponse("Comment updated successfully", updatedComment));
   } catch (error) {
-    console.error("Error in updateCommentController:", error);
     return res
       .status(500)
       .json(errorResponse("Internal Server Error", error.message));
@@ -287,7 +283,6 @@ export const softDeleteCommentController = async (req, res) => {
       .status(200)
       .json(successResponse("Comment deleted successfully", result));
   } catch (error) {
-    console.error("Error in softDeleteCommentController:", error);
     return res
       .status(500)
       .json(errorResponse("Internal Server Error", error.message));
@@ -358,7 +353,6 @@ export const hardDeleteCommentController = async (req, res) => {
         successResponse("Comment(s) permanently deleted successfully", result)
       );
   } catch (error) {
-    console.error("Error in hardDeleteCommentController:", error);
     return res
       .status(500)
       .json(errorResponse("Internal Server Error", error.message));

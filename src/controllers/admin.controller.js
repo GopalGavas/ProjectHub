@@ -44,8 +44,9 @@ export const fetchUserByIdController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("ADMIN: Get User by Id error: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -75,8 +76,9 @@ export const getAllUsersController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("ADMIN: Get All Users Error: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -126,8 +128,9 @@ export const updateUserRoleController = async (req, res) => {
       .status(200)
       .json(successResponse("User role updated successfully", updatedUser));
   } catch (error) {
-    console.error("ADMIN: Update User Role Error: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -178,8 +181,9 @@ export const softDeleteUserController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("DELETE USER CONTROLLER (ADMIN) ERROR: ", error);
-    return res.status(500).json(errorResponse("Internal server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal server Error", error.message));
   }
 };
 
@@ -230,8 +234,9 @@ export const restoreUserController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("SOFT DELETE USER CONTROLLER (ADMIN) ERROR: ", error);
-    return res.status(500).json(errorResponse("Internal server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal server Error", error.message));
   }
 };
 
@@ -277,7 +282,8 @@ export const hardDeleteUserController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("PERMANENT DELETE USER CONTROLLER (ADMIN) ERROR: ", error);
-    return res.status(500).json(errorResponse("Internal server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal server Error", error.message));
   }
 };

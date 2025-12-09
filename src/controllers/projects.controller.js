@@ -119,8 +119,9 @@ export const createProjectController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("Error in Create Project Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -153,8 +154,9 @@ export const getProjectByIdController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("Error in Get Project By Id Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -184,8 +186,9 @@ export const getAllProjectsController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("Error in Get All Projects Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -277,8 +280,9 @@ export const updateProjectController = async (req, res) => {
       .status(200)
       .json(successResponse("Project Updated Successfully", updatedProject));
   } catch (error) {
-    console.error("Error in Update Project Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -383,8 +387,9 @@ export const addMembersToProjectController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("Error in Add-Members-To-Project Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -494,8 +499,9 @@ export const removeMembersFromProjectController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("Error in Remove-Members-From-Project Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -556,8 +562,9 @@ export const softDeleteProjectController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("Error in Soft-Delete-Project Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -615,8 +622,9 @@ export const restoreProjectController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("Error RestoreProject Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -683,7 +691,8 @@ export const hardDeleteProjectController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("Error in Hard Delete Project Controller: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };

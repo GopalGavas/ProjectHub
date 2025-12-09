@@ -47,8 +47,9 @@ export const getUserProfileController = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error("User Get Profile Error: ", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -99,8 +100,9 @@ export const updateUserDetailsController = async (req, res) => {
       .status(200)
       .json(successResponse("User Details Updated Successfully", updatedUser));
   } catch (error) {
-    console.error("Update User Details", error);
-    return res.status(500).json(errorResponse("Internal Server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal Server Error", error.message));
   }
 };
 
@@ -161,8 +163,9 @@ export const changePasswordController = async (req, res) => {
         successResponse("Password Updated Successfully", "Please Login Again")
       );
   } catch (error) {
-    console.error("Update Password failed: ", error);
-    return res.status(500).json(errorResponse("Internal server error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal server error", error.message));
   }
 };
 
@@ -207,7 +210,8 @@ export const selfDeleteUserController = async (req, res) => {
       .status(200)
       .json(successResponse("Your Accound Disabled Successfully"));
   } catch (error) {
-    console.error("SELF DELETE USER CONTROLLER ERROR: ", error);
-    return res.status(500).json(errorResponse("Internal server Error"));
+    return res
+      .status(500)
+      .json(errorResponse("Internal server Error", error.message));
   }
 };
