@@ -4,7 +4,8 @@ import { drizzle } from "drizzle-orm/node-postgres";
 
 const { Pool } = pkg;
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL_PROD,
+  ssl: { rejectUnauthorized: false },
 });
 
 pool.on("error", (err) => {

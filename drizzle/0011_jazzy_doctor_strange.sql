@@ -1,1 +1,0 @@
-CREATE UNIQUE INDEX "unique_comment_user_reaction" ON "comment_reactions" USING btree ("comment_id","user_id");

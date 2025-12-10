@@ -1,1 +1,0 @@
-ALTER TABLE "tasks" ADD COLUMN "is_Deleted" boolean DEFAULT false;

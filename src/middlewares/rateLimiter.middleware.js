@@ -1,25 +1,42 @@
-import rateLimit from "express-rate-limit";
-import RedisStore from "rate-limit-redis";
+import { Ratelimit } from "@upstash/ratelimit";
 import redis from "../db/redis.js";
 
-export const globalLimiter = rateLimit({
-  store: new RedisStore({
-    sendCommand: (...args) => redis.call(...args),
-  }),
-  windowMs: 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many requests, try again later" },
-});
+export const globalLimiter = (req, res, next) => {
+  const ip = req.ip || "unknown";
 
-export const authRateLimiter = rateLimit({
-  store: new RedisStore({
-    sendCommand: (...args) => redis.call(...args),
-  }),
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many request to this endpoint" },
-});
+  const limiter = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(100, "10 m"),
+  });
+
+  limiter.limit(ip).then((result) => {
+    if (!result.success) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many requests, slow down.",
+      });
+    }
+
+    next();
+  });
+};
+
+export const authRateLimiter = (req, res, next) => {
+  const ip = req.ip || "unknown";
+
+  const limiter = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(10, "15 m"),
+  });
+
+  limiter.limit(ip).then((result) => {
+    if (!result.success) {
+      return res.status(429).json({
+        success: false,
+        message: "Too many auth attempts. Try again later.",
+      });
+    }
+
+    next();
+  });
+};
