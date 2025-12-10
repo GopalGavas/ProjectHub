@@ -39,8 +39,6 @@ export const authenticateUser = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error("Auth Middleware Error: ", error);
-
     if (error.name === "TokenExpiredError") {
       return res
         .status(401)
@@ -61,13 +59,6 @@ export const authenticateUser = async (req, res, next) => {
 export const authoriseRoles = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user || !allowedRoles.includes(req.user?.role)) {
-      console.log(
-        "Authorized Roles:",
-        allowedRoles,
-        "User Role:",
-        req.user?.role
-      );
-
       return res
         .status(403)
         .json(
