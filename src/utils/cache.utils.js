@@ -1,7 +1,9 @@
 import redis from "../db/redis.js";
 
 export const setCache = async (key, value, ttl = 60) => {
-  await redis.set(key, JSON.stringify(value), "EX", ttl);
+  await redis.set(key, JSON.stringify(value), {
+    ex: ttl,
+  });
 };
 
 export const getCache = async (key) => {
