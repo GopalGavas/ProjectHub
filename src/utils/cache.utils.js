@@ -1,14 +1,22 @@
 import redis from "../db/redis.js";
 
 export const setCache = async (key, value, ttl = 60) => {
-  await redis.set(key, JSON.stringify(value), {
-    ex: ttl,
-  });
+  const safeValue = typeof value === "string" ? value : JSON.stringify(value);
+
+  await redis.set(key, safeValue, { ex: ttl });
 };
 
 export const getCache = async (key) => {
   const data = await redis.get(key);
-  return data ? JSON.parse(data) : null;
+  if (!data) return null;
+
+  try {
+    return JSON.parse(data);
+  } catch (err) {
+    console.error("❌ Invalid JSON in cache for key:", key);
+    await redis.del(key); // auto-heal
+    return null;
+  }
 };
 
 export const deleteCache = async (key) => {
