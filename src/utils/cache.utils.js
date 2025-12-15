@@ -14,29 +14,18 @@ export const deleteCache = async (key) => {
 };
 
 export const deleteCachePatterns = async (pattern) => {
-  const stream = redis.scanStream({
-    match: pattern,
-    count: 50,
-  });
+  let cursor = 0;
 
-  return new Promise((resolve, reject) => {
-    stream.on("data", (keys) => {
-      stream.pause();
-
-      Promise.resolve()
-        .then(() => {
-          if (keys.length) {
-            return redis.del(...keys);
-          }
-        })
-        .then(() => stream.resume())
-        .catch((err) => {
-          stream.destroy();
-          reject(err);
-        });
+  do {
+    const [nextCursor, keys] = await redis.scan(cursor, {
+      match: pattern,
+      count: 50,
     });
 
-    stream.on("end", resolve);
-    stream.on("error", reject);
-  });
+    if (keys.length > 0) {
+      await redis.del(...keys);
+    }
+
+    cursor = Number(nextCursor);
+  } while (cursor !== 0);
 };
