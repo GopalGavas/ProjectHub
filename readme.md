@@ -1,129 +1,203 @@
-1️⃣ ProjectHub – Team-based Project Management API Think: A lightweight alternative to Jira or Trello.
-Key Features:
-🧑‍💼 Authentication (JWT or session)
-🧠 Roles: admin, member, guest
-📁 Projects (created by admins)
-🗂️ Tasks (assigned to users)
-💬 Comments per task
-📊 Project statistics (count tasks by status)
-📈 Pagination, filtering (status = “in-progress”, “done”, etc.)
-✅ Activity logs (auditing)
-👀 Optional: Webhook or email notifications on task update
+# ProjectHub API
 
-user and auth routes:
-| Responsibility | Controller | Access | Description |
-| ------------------- | ---------- | ------------- | ------------------ |
-| `registerUser` | Auth | Public | New user signup |
-| `loginUser` | Auth | Public | User login |
-| `getProfile` | User | Authenticated | Fetch own profile |
-| `updateUserDetails` | User | Authenticated | Update name/avatar |
-| `changePassword` | User | Authenticated | Change password |
-| `getAllUsers` | User | Admin | View all users |
-| `deleteUser` | User | Admin | Delete user |
+**ProjectHub** is a **production-grade, team-based project management backend API**, inspired by tools like **Jira** and **Trello**. It enables teams to collaborate efficiently through structured project, task, and discussion management, backed by strong authentication, role-based authorization, and detailed activity tracking.
 
-## 🧭 Project Management Module — ProjectHub API
+This repository represents the **final, production-ready version** of ProjectHub, consolidating early design intentions with the completed system architecture and features.
 
-This module powers the team collaboration features within **ProjectHub**, providing a robust, structured, and role-based access system for creating, managing, and collaborating on projects. It's designed to be a production-grade backend solution, demonstrating clean modular architecture and advanced role-based authorization.
+---
+
+## 🧠 What is ProjectHub?
+
+ProjectHub is designed as a **scalable collaboration platform** where:
+
+- Teams work inside **projects**
+- Work is tracked using **tasks**
+- Discussions happen via **comments**
+- Every important action is captured via **activity logs**
+
+The API demonstrates **real-world backend engineering practices** rather than basic CRUD operations.
+
+📄 API Documentation: Full request/response documentation is available via Postman Docs.
+
+🔗 Documentation Link: https://documenter.getpostman.com/view/28528757/2sBXVcnZLp
 
 ---
 
 ## 🚀 Key Features
 
-- **Project Lifecycle Management:** Full CRUD operations supporting project creation, soft-deletion, and restoration.
-- **Role-Based Access Control (RBAC):** Implements a two-layer authorization system:
-  1.  **Global Role** (`admin`, `member`, `guest`) for API endpoint access.
-  2.  **Project Role** (`owner`, `manager`, `member`) for in-project permissions.
-- **Structured Collaboration:** Enables project owners and managers to invite members and assign specific project roles.
-- **Integrated Membership:** Manages project members, their roles, and access rights within the project scope.
-- **Security & Data Integrity:** Uses comprehensive middleware to enforce access control based on user status, project status, and project-specific role permissions.
+### 🔐 Authentication & Authorization
 
----
+- JWT-based authentication
+- Secure signup, login, logout
+- Forgot / reset password flow
+- Middleware-driven route protection
 
-## 🔒 Project Role-Based Permissions
+### 🧑‍💼 Roles System
 
-Project roles strictly define what a user can do within a specific project. The access matrix is as follows:
+**Global Roles** (API-level):
 
-| Role        | `RoleView` (View Project Details) | `ProjectEdit` (Edit Metadata) | `ProjectManage Members` | `Delete Project` (Soft Delete) |
-| :---------- | :-------------------------------- | :---------------------------- | :---------------------- | :----------------------------- |
-| **Owner**   | ✅                                | ✅                            | ✅                      | ✅                             |
-| **Manager** | ✅                                | ✅                            | ✅                      | ❌                             |
-| **Member**  | ✅                                | ❌                            | ❌                      | ❌                             |
+- `admin`
+- `member`
+- `guest`
 
----
+**Project Roles** (project-scoped):
 
-## ⚙️ API Endpoints & Project Lifecycle
+- `owner`
+- `manager`
+- `member`
 
-The Project Management module supports the following core project lifecycle endpoints:
-
-| Step                   | Endpoint                          | Method | Description                                                                 | Authorization      |
-| :--------------------- | :-------------------------------- | :----- | :-------------------------------------------------------------------------- | :----------------- |
-| **1. Create Project**  | `/projects`                       | `POST` | Creates a new project and automatically assigns the creator as the `owner`. | Authenticated User |
-| **2. Add Members**     | `/projects/:id/members`           | `POST` | Adds new users to the project.                                              | `owner`, `manager` |
-| **3. Manage Roles**    | `/projects/:id/members/:memberId` | `PUT`  | Promotes, demotes, or removes a member from the project.                    | `owner`, `manager` |
-| **4. Soft Delete**     | `/projects/:id/delete`            | `PUT`  | Marks the project as inactive in the database.                              | `owner`            |
-| **5. Restore Project** | `/projects/:id/restore`           | `PUT`  | Reactivates a soft-deleted project.                                         | `owner`            |
-
----
-
-## 🧩 Data Relationships (Simplified Schema)
-
-The module relies on a relational structure to manage users, projects, and collaboration data:
-
-- **User** (Global Role) $\rightarrow$ **Project** (`ownerId` $\rightarrow$ `User.id`)
-- **Project** $\rightarrow$ **ProjectMembers** (`userId`, `projectId`, `projectRole`)
-- **Project** $\rightarrow$ **Tasks** (Upcoming) $\rightarrow$ **Comments** (Future)
-
-### Database Entities (Preview)
-
-#### `projects`
-
-| Column        | Type                    | Description     |
-| :------------ | :---------------------- | :-------------- |
-| `id`          | `UUID`                  | Primary key     |
-| `name`        | `String`                | Project name    |
-| `description` | `Text`                  | Project summary |
-| `ownerId`     | `UUID` (FK: `users.id`) | Project creator |
-| `isActive`    | `Boolean`               | Project status  |
-| `createdAt`   | `Timestamp`             | Creation date   |
-
-#### `project_members`
-
-| Column      | Type                            | Description           |
-| :---------- | :------------------------------ | :-------------------- |
-| `id`        | `UUID`                          | Primary key           |
-| `projectId` | `UUID` (FK: `projects.id`)      | Associated project    |
-| `userId`    | `UUID` (FK: `users.id`)         | Member user           |
-| `role`      | `Enum (owner, manager, member)` | Project-specific role |
-| `joinedAt`  | `Timestamp`                     | When the user joined  |
+This two-layer RBAC model mirrors real enterprise systems.
 
 ---
 
 ## 🛠 Tech Stack
 
-| Category              | Technologies Used                            |
-| :-------------------- | :------------------------------------------- |
-| **Backend Framework** | Node.js + Express                            |
-| **Database**          | Drizzle ORM + PostgreSQL                     |
-| **Security**          | JWT Authentication, Role-Based Authorization |
-| **Validation**        | Zod                                          |
-| **Architecture**      | Modular Controller-Service-Model Pattern     |
+| Category        | Technology            |
+| --------------- | --------------------- |
+| Backend         | Node.js, Express.js   |
+| Database        | PostgreSQL            |
+| ORM             | Drizzle ORM           |
+| Authentication  | JWT                   |
+| Authorization   | Role-based middleware |
+| Validation      | Zod                   |
+| Documentation   | Postman Docs          |
+| Version Control | Git & GitHub          |
 
 ---
 
-## 🔜 Future Enhancements
+## 🧱 Architecture Highlights
 
-- **Task Management:** Full CRUD operations for tasks, including assignment, status tracking, and deadlines.
-- **Comments:** Dedicated comment threads for tasks to facilitate better collaboration.
-- **Audit Trail:** Logging of all significant actions (e.g., project creation, role updates) for activity history and admin monitoring.
+- RESTful API design
+- Nested routing for strict data ownership
+- Separation of concerns (Auth, Users, Admin, Projects, Tasks, Comments, Activities)
+- Soft delete strategy for safer recovery
+- Hard delete restricted to admin operations
+- Clean middleware-driven authorization
 
-## TASK MODULE:
+---
 
-| Route                                                 | Description                         | Access                        |
-| ----------------------------------------------------- | ----------------------------------- | ----------------------------- |
-| **POST `/projects/:projectId/tasks`**                 | Create task                         | Owner, Manager                |
-| **GET `/projects/:projectId/tasks`**                  | Fetch all tasks in a project        | All members                   |
-| **GET `/projects/:projectId/tasks/:taskId`**          | Get a single task detail            | All members                   |
-| **PUT `/projects/:projectId/tasks/:taskId`**          | Update title/desc/priority/due date | Owner, Manager                |
-| **PATCH `/projects/:projectId/tasks/:taskId/assign`** | Assign task to member               | Owner, Manager                |
-| **PATCH `/projects/:projectId/tasks/:taskId/status`** | Change task status                  | Owner, Manager, Assigned user |
-| **DELETE `/projects/:projectId/tasks/:taskId`**       | Soft delete task                    | Owner, Manager                |
+## 👤 User & Auth Module
+
+### User Responsibilities
+
+| Responsibility      | Controller | Access        | Description          |
+| ------------------- | ---------- | ------------- | -------------------- |
+| `registerUser`      | Auth       | Public        | New user signup      |
+| `loginUser`         | Auth       | Public        | User login           |
+| `getProfile`        | User       | Authenticated | Fetch own profile    |
+| `updateUserDetails` | User       | Authenticated | Update name / avatar |
+| `changePassword`    | User       | Authenticated | Change password      |
+| `getAllUsers`       | Admin      | Admin         | View all users       |
+| `deleteUser`        | Admin      | Admin         | Delete user          |
+
+---
+
+## 🧭 Project Management Module
+
+This module powers **team collaboration**, enforcing strict authorization and ownership rules.
+
+### 🔒 Project Role-Based Permissions
+
+| Role        | View Project | Edit Project | Manage Members | Soft Delete Project |
+| ----------- | ------------ | ------------ | -------------- | ------------------- |
+| **Owner**   | ✅           | ✅           | ✅             | ✅                  |
+| **Manager** | ✅           | ✅           | ✅             | ❌                  |
+| **Member**  | ✅           | ❌           | ❌             | ❌                  |
+
+---
+
+### ⚙️ Project Lifecycle Endpoints
+
+| Step            | Endpoint                   | Method | Description                | Access         |
+| --------------- | -------------------------- | ------ | -------------------------- | -------------- |
+| Create Project  | `/projects`                | POST   | Create new project         | Admin          |
+| Add Members     | `/projects/:id/members`    | POST   | Add users to project       | Owner, Manager |
+| Update Project  | `/projects/:id`            | PUT    | Update project details     | Owner, Manager |
+| Soft Delete     | `/projects/:id/deactivate` | PUT    | Deactivate project         | Owner          |
+| Restore Project | `/projects/:id/restore`    | PUT    | Restore project            | Owner          |
+| Hard Delete     | `/projects/:id`            | DELETE | Permanently delete project | Admin          |
+
+---
+
+## ✅ Task Management Module
+
+Tasks represent actionable work items within projects.
+
+### Task Endpoints
+
+| Route                                            | Description        | Access                   |
+| ------------------------------------------------ | ------------------ | ------------------------ |
+| POST `/projects/:projectId/tasks`                | Create task        | Owner, Manager           |
+| GET `/projects/:projectId/tasks`                 | Fetch all tasks    | All members              |
+| GET `/projects/:projectId/tasks/:taskId`         | Fetch task details | All members              |
+| PUT `/projects/:projectId/tasks/:taskId`         | Update task        | Owner, Manager           |
+| PUT `/projects/:projectId/tasks/:taskId/status`  | Update task status | Owner, Manager, Assignee |
+| PUT `/projects/:projectId/tasks/:taskId/delete`  | Soft delete task   | Owner, Manager           |
+| PUT `/projects/:projectId/tasks/:taskId/restore` | Restore task       | Owner, Manager           |
+| DELETE `/projects/:projectId/tasks/:taskId`      | Hard delete task   | Admin                    |
+
+---
+
+## 💬 Comments, Likes & Reactions
+
+- Comments are scoped to tasks
+- Supports edit, soft delete, and hard delete
+- Like toggle per user
+- Emoji-style reactions
+- Aggregated reaction summaries per comment
+
+---
+
+## 📊 Activity Logs & Auditing
+
+ProjectHub automatically records activities at multiple levels:
+
+- User activities
+- Project activities
+- Task activities
+
+This enables:
+
+- Auditing
+- Change tracking
+- Historical insights
+
+---
+
+## 📈 Pagination, Filtering & Statistics
+
+- Pagination support for list endpoints
+- Filtering tasks by status (`todo`, `in-progress`, `done`)
+- Project-level task statistics (count by status)
+
+---
+
+## ❤️ System Health
+
+```
+GET /health
+```
+
+Returns API status and server uptime. Used for monitoring and deployment verification.
+
+---
+
+## 📊 API Scale
+
+- **Total Endpoints:** 45+
+- Covers auth, RBAC, CRUD, nested resources, activity tracking, and moderation flows
+
+---
+
+## 📌 Use Cases
+
+- Team collaboration platforms
+- Project & task management systems
+- Internal productivity tools
+- Portfolio-grade backend demonstration
+
+---
+
+## ✨ Final Note
+
+ProjectHub is **not a toy project**. It reflects how real-world backend systems are planned, secured, and scaled. The architecture, authorization model, and documentation are intentionally designed to match production-level standards.
