@@ -1,6 +1,6 @@
 import { commentsTable } from "../models/comments.model.js";
 import { db } from "../db/index.js";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { usersTable } from "../models/user.model.js";
 import { commentLikesTable } from "../models/likes.model.js";
 import { commentReactionsTable } from "../models/reactions.model.js";
@@ -245,45 +245,4 @@ export const hardDeleteCommentService = async (commentId) => {
   ]);
 };
 
-export const hardDeleteCommentThreadService = async (commentId) => {
-  const [rootComment] = await db
-    .select()
-    .from(commentsTable)
-    .where(eq(commentsTable.id, commentId));
 
-  if (!rootComment) return null;
-
-  const taskId = rootComment.taskId;
-
-  const allComments = await db.select().from(commentsTable);
-
-  const map = new Map();
-
-  allComments.forEach((comment) => {
-    const parent = comment.parentId || "root";
-    if (!map.has(parent)) map.set(parent, []);
-    map.get(parent).push(comment);
-  });
-
-  const idsToDelete = [];
-
-  const collectIds = (parentId) => {
-    idsToDelete.push(parentId);
-    const children = map.get(parentId) || [];
-    if (children) {
-      children.forEach((child) => collectIds(child.id));
-    }
-  };
-
-  collectIds(commentId);
-
-  await db.delete(commentsTable).where(inArray(commentsTable.id, idsToDelete));
-
-  await Promise.all([
-    ...idsToDelete.map((id) => deleteCache(`comments:${id}`)),
-    ...idsToDelete.map((id) => deleteCache(`comments:${id}:summary`)),
-    deleteCachePatterns(`comments:list:${taskId}:*`),
-  ]);
-
-  return { deletedId: idsToDelete };
-};

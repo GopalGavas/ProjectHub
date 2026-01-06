@@ -15,7 +15,6 @@ import {
   getCommentByIdService,
   getCommentsByTaskService,
   hardDeleteCommentService,
-  hardDeleteCommentThreadService,
   softDeleteCommentService,
   softDeleteCommentThreadService,
   updateCommentService,
@@ -328,12 +327,7 @@ export const hardDeleteCommentController = async (req, res) => {
         .json(errorResponse("Bad Request", "Comment is not soft Deleted"));
     }
 
-    let result;
-    if (existingComment.parentId === null) {
-      result = await hardDeleteCommentThreadService(commentId);
-    } else {
-      result = await hardDeleteCommentService(commentId);
-    }
+    let result = await hardDeleteCommentService(commentId);
 
     await logActivity({
       projectId,
@@ -344,6 +338,7 @@ export const hardDeleteCommentController = async (req, res) => {
       metadata: {
         deleted: true,
         comment: existingComment.content,
+        isThreadRoot: existingComment.parentId === null,
       },
     });
 
