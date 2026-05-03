@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { Redis } from "@upstash/redis";
+import logger from "../utils/logger.js";
 
 if (
   !process.env.UPSTASH_REDIS_REST_URL ||
@@ -13,7 +14,7 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
-console.log("Upstash Redis Connected 🟢");
+logger.info("Upstash Redis Connected 🟢");
 
 export default redis;
 

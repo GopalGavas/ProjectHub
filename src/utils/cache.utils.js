@@ -1,4 +1,5 @@
 import redis from "../db/redis.js";
+import logger from "./logger.js";
 
 export const setCache = async (key, value, ttl = 60) => {
   const safeValue = typeof value === "string" ? value : JSON.stringify(value);
@@ -13,7 +14,7 @@ export const getCache = async (key) => {
   try {
     return JSON.parse(data);
   } catch (err) {
-    console.error("❌ Invalid JSON in cache for key:", key);
+    logger.error({ key, err }, "Invalid JSON in cache");
     await redis.del(key); // auto-heal
     return null;
   }

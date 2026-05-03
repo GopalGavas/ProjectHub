@@ -1,6 +1,7 @@
 import "dotenv/config";
 import pkg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
+import logger from "../utils/logger.js";
 
 const { Pool } = pkg;
 const pool = new Pool({
@@ -9,7 +10,7 @@ const pool = new Pool({
 });
 
 pool.on("error", (err) => {
-  console.error("Unexpected Postgres client error", err);
+  logger.error({ err }, "Unexpected Postgres client error");
 });
 
 export const db = drizzle(pool);

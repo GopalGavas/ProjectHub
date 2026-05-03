@@ -6,6 +6,8 @@ import {
   globalLimiter,
 } from "./middlewares/rateLimiter.middleware.js";
 import cors from "cors";
+import logger from "./utils/logger.js";
+import { pinoHttp } from "pino-http";
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -20,6 +22,13 @@ app.use(
 applySecurity(app);
 
 app.set("trust proxy", 1);
+
+app.use(
+  pinoHttp({
+    logger,
+    autoLogging: true,
+  })
+);
 
 app.use("/api/auth", authRateLimiter);
 app.use("/api", globalLimiter);
@@ -37,8 +46,8 @@ app.get("/health", (_, res) => {
   res.status(200).json({ status: "ok", uptime: process.uptime() });
 });
 
-app.use((err, _, res, next) => {
-  console.error("Error:", err);
+app.use((err, req, res, next) => {
+  req.log.error(err);
 
   res.status(err.status || 500).json({
     success: false,
@@ -47,5 +56,5 @@ app.use((err, _, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is listening on PORT ${PORT}`);
+  logger.info(`Server is listening on PORT ${PORT}`);
 });
