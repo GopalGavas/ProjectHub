@@ -9,16 +9,23 @@ export const globalLimiter = (req, res, next) => {
     limiter: Ratelimit.slidingWindow(100, "10 m"),
   });
 
-  limiter.limit(ip).then((result) => {
-    if (!result.success) {
-      return res.status(429).json({
-        success: false,
-        message: "Too many requests, slow down.",
-      });
-    }
+  limiter
+    .limit(ip)
+    .then((result) => {
+      if (!result.success) {
+        return res.status(429).json({
+          success: false,
+          message: "Too many requests, slow down.",
+        });
+      }
 
-    next();
-  });
+      next();
+    })
+    .catch((err) => {
+      // Log the error but allow the request to proceed
+      console.error("Rate limiter error (skipping check):", err.message);
+      next();
+    });
 };
 
 export const authRateLimiter = (req, res, next) => {
@@ -29,14 +36,21 @@ export const authRateLimiter = (req, res, next) => {
     limiter: Ratelimit.slidingWindow(10, "15 m"),
   });
 
-  limiter.limit(ip).then((result) => {
-    if (!result.success) {
-      return res.status(429).json({
-        success: false,
-        message: "Too many auth attempts. Try again later.",
-      });
-    }
+  limiter
+    .limit(ip)
+    .then((result) => {
+      if (!result.success) {
+        return res.status(429).json({
+          success: false,
+          message: "Too many auth attempts. Try again later.",
+        });
+      }
 
-    next();
-  });
+      next();
+    })
+    .catch((err) => {
+      // Log the error but allow the request to proceed
+      console.error("Auth rate limiter error (skipping check):", err.message);
+      next();
+    });
 };
